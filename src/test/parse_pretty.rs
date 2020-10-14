@@ -1,16 +1,22 @@
 macro_rules! check_parse_expr {
     ( $a: expr, $b: expr ) => {
-        let result = expr().parse($a);
+        let result = expr().parse(easy::Stream($a));
         match result {
-            Ok((v, "")) => assert_eq!(v, $b),
-            Ok((_, _)) => assert!(false, "parse left unconsumed input"),
-            Err(err) => assert!(false, "parse error: {}", err),
+            Ok((v, stream)) => {
+                if stream == easy::Stream("") {
+                    assert_eq!(v, $b)
+                } else {
+                    assert!(false, "parse left unconsumed input")
+                }
+            }
+            Err(err) => assert!(false, "parse error: {:?}", err),
         }
     };
 }
 
 pub mod parse_unit {
     use combine::parser::Parser;
+    use combine::stream::easy;
 
     use crate::parse::*;
     use crate::syntax::{Lit, *};

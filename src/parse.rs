@@ -3,8 +3,8 @@ use combine::parser::char::{char, letter, spaces, string};
 use combine::stream::position;
 use combine::stream::{Positioned, Stream};
 use combine::{
-    between, choice, many1, parser, satisfy, sep_by, skip_many, skip_many1, token, EasyParser,
-    Parser,
+    attempt, between, choice, many1, parser, satisfy, sep_by, skip_many, skip_many1, token,
+    EasyParser, Parser,
 };
 
 use super::syntax::*;
@@ -24,7 +24,7 @@ where
     // Creates a parser which parses a char and skips any trailing whitespace
     let lex_char = |c| char(c).skip(skip_spaces());
 
-    let word = || many1(letter());
+    let word = || many1(letter()).skip(skip_spaces());
     let str_ = |x| string(x).skip(skip_spaces());
 
     let name = || word().map(Name);
@@ -52,7 +52,7 @@ where
 
     let fix = (str_("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
-    let parenthesized = choice((lam, let_, if_, fix, app));
+    let parenthesized = choice((attempt(lam), let_, if_, fix, app));
 
     choice((var, between(lex_char('('), lex_char(')'), parenthesized))).skip(skip_spaces())
 }
