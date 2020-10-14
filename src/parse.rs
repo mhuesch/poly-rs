@@ -25,7 +25,7 @@ pub enum Expr {
 }
 
 // `impl Parser` can be used to create reusable parsers with zero overhead
-fn expr_<Input>() -> impl Parser< Input, Output = Expr>
+pub fn expr_<Input>() -> impl Parser< Input, Output = Expr>
     where Input: Stream<Token = char>,
           // Necessary due to rust-lang/rust#24159
           Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
@@ -68,7 +68,7 @@ fn expr_<Input>() -> impl Parser< Input, Output = Expr>
 // (This macro does not use `impl Trait` which means it can be used in rust < 1.26 as well to
 // emulate `impl Parser`)
 parser!{
-    fn expr[Input]()(Input) -> Expr
+    pub fn expr[Input]()(Input) -> Expr
     where [Input: Stream<Token = char>]
     {
         expr_()

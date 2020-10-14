@@ -1,9 +1,13 @@
 use poly::{
+    parse::{
+        expr,
+    },
     pretty::*,
     syntax::*,
     syntax::Lit,
 };
 use Expr::*;
+use combine::parser::Parser;
 
 fn main() {
     println!("hello, poly & Rust!");
@@ -16,4 +20,8 @@ fn main() {
     let e5 = Var(Name("free".to_string()));
     let e6 = Let(Name("x".to_string()), Box::new(e5), Box::new(e4));
     println!("{}", to_pretty(e6.ppr(), 80));
+
+    let result = expr()
+        .parse("[[], (hello, world), [rust]]");
+    println!("{:?}", result);
 }
