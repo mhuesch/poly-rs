@@ -32,11 +32,7 @@ pub mod parse_unit {
         Fix(Box::new(e0()))
     }
     fn e4() -> Expr {
-        If(
-            Box::new(e0()),
-            Box::new(e0()),
-            Box::new(e0()),
-        )
+        If(Box::new(e0()), Box::new(e0()), Box::new(e0()))
     }
     fn e5() -> Expr {
         Var(Name("free".to_string()))

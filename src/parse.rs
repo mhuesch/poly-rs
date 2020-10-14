@@ -50,8 +50,7 @@ where
     let if_ = (str_("if"), expr(), expr(), expr())
         .map(|t| Expr::If(Box::new(t.1), Box::new(t.2), Box::new(t.3)));
 
-    let fix = (str_("fix"), expr())
-        .map(|t| Expr::Fix(Box::new(t.1)));
+    let fix = (str_("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
     let parenthesized = choice((lam, let_, if_, fix, app));
 
