@@ -46,38 +46,42 @@ pub mod parse_unit {
     }
 
     #[test]
-    fn ex1() {
+    fn ex0() {
         check_parse_expr!("x", e0());
     }
 
     #[test]
-    fn ex2() {
+    fn ex1() {
         check_parse_expr!("(lam [x] x)", e1());
     }
 
     #[test]
-    fn ex3() {
-        check_parse_expr!("(x x)", App(Box::new(e0()), Box::new(e0())));
+    fn ex2() {
+        check_parse_expr!("((lam [x] x) (lam [x] x))", e2());
     }
 
-    // #[test]
-    // fn ex4() {
-    //     check_parse_expr!("", );
+    #[test]
+    fn ex3() {
+        check_parse_expr!("(fix +)", e3());
+    }
 
-    // #[test]
-    // fn ex() {
-    //     check_parse_expr!("", );
+    #[test]
+    fn ex4() {
+        check_parse_expr!("(if true ((lam [x] x) (lam [x] x)) (fix +))", e4());
+    }
 
-    // #[test]
-    // fn ex() {
-    //     check_parse_expr!("", );
+    #[test]
+    fn ex5() {
+        check_parse_expr!("free", e5());
+    }
 
-    // #[test]
-    // fn ex() {
-    //     check_parse_expr!("", );
+    #[test]
+    fn ex6() {
+        check_parse_expr!("(let ([x free]) (if true ((lam [x] x) (lam [x] x)) (fix +)))", e6());
+    }
 
-    // #[test]
-    // fn ex() {
-    //     check_parse_expr!("", );
-    // }
+    #[test]
+    fn exHuh() {
+        check_parse_expr!("(x x)", App(Box::new(e0()), Box::new(e0())));
+    }
 }
