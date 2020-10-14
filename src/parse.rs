@@ -1,10 +1,10 @@
 use combine::error::{ParseError, StdParseResult};
-use combine::parser::char::{char, letter, spaces, string};
+use combine::parser::char::{char, digit, letter, spaces, string};
 use combine::stream::position;
 use combine::stream::{Positioned, Stream};
 use combine::{
-    attempt, between, choice, many1, parser, satisfy, sep_by, skip_many, skip_many1, token,
-    EasyParser, Parser,
+    attempt, between, choice, many1, optional, parser, satisfy, sep_by, skip_many, skip_many1,
+    token, EasyParser, Parser,
 };
 
 use super::syntax::*;
@@ -25,10 +25,25 @@ where
     let lex_char = |c| char(c).skip(skip_spaces());
 
     let word = || many1(letter()).skip(skip_spaces());
+    let integer = || many1(digit()).skip(skip_spaces());
     let str_ = |x| string(x).skip(skip_spaces());
 
     let name = || word().map(Name);
     let var = name().map(Expr::Var);
+    let l_bool = choice((
+        str_("true").map(|_| Lit::LBool(true)),
+        (str_("false").map(|_| Lit::LBool(false))),
+    ));
+    let l_int = (optional(lex_char('-')), integer()).map(|t| {
+        // TODO handle this error, even though it should be impossible
+        let string: String = t.1;
+        let num = string.parse::<i64>().unwrap();
+        match t.0 {
+            Some(_) => Lit::LInt(-num),
+            None => Lit::LInt(num),
+        }
+    });
+    let lit = choice((l_bool, l_int)).map(|v| Expr::Lit(v));
 
     let app = (expr(), expr()).map(|t| Expr::App(Box::new(t.0), Box::new(t.1)));
 
@@ -54,7 +69,12 @@ where
 
     let parenthesized = choice((attempt(lam), let_, if_, fix, app));
 
-    choice((var, between(lex_char('('), lex_char(')'), parenthesized))).skip(skip_spaces())
+    choice((
+        attempt(lit),
+        var,
+        between(lex_char('('), lex_char(')'), parenthesized),
+    ))
+    .skip(skip_spaces())
 }
 
 // As this expression parser needs to be able to call itself recursively `impl Parser` can't

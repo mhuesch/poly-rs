@@ -15,7 +15,7 @@ pub enum Expr {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Lit {
-    LInt(u64),
+    LInt(i64),
     LBool(bool),
 }
 

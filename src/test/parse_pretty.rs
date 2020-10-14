@@ -90,6 +90,21 @@ pub mod parse_unit {
     }
 
     #[test]
+    fn ex_lit_1() {
+        check_parse_expr!("1", Expr::Lit(Lit::LInt(1)));
+    }
+
+    #[test]
+    fn ex_lit_2() {
+        check_parse_expr!("true", Expr::Lit(Lit::LBool(true)));
+    }
+
+    #[test]
+    fn ex_lit_3() {
+        check_parse_expr!("-2", Expr::Lit(Lit::LInt(-2)));
+    }
+
+    #[test]
     fn ex_huh() {
         check_parse_expr!("(x x)", App(Box::new(e0()), Box::new(e0())));
     }
