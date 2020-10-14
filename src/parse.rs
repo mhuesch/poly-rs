@@ -1,18 +1,13 @@
 use combine::stream::position;
 use combine::error::{ParseError, StdParseResult};
-use combine::parser::char::{char, letter, spaces};
+use combine::parser::char::{char, letter, spaces, string};
 use combine::stream::{Positioned, Stream};
 use combine::{
     between, choice, many1, parser, satisfy, sep_by, skip_many, skip_many1, token, EasyParser,
     Parser,
 };
 
-#[derive(Debug, PartialEq)]
-pub enum Expr {
-    Id(String),
-    Array(Vec<Expr>),
-    Pair(Box<Expr>, Box<Expr>)
-}
+use super::syntax::*;
 
 // `impl Parser` can be used to create reusable parsers with zero overhead
 pub fn expr_<Input>() -> impl Parser< Input, Output = Expr>
@@ -20,32 +15,34 @@ pub fn expr_<Input>() -> impl Parser< Input, Output = Expr>
           // Necessary due to rust-lang/rust#24159
           Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    let word = many1(letter());
-
     // A parser which skips past whitespace.
     // Since we aren't interested in knowing that our expression parser
     // could have accepted additional whitespace between the tokens we also silence the error.
     let skip_spaces = || spaces().silent();
 
-    //Creates a parser which parses a char and skips any trailing whitespace
+    // Creates a parser which parses a char and skips any trailing whitespace
     let lex_char = |c| char(c).skip(skip_spaces());
 
-    let comma_list = sep_by(expr(), lex_char(','));
-    let array = between(lex_char('['), lex_char(']'), comma_list);
+    let word = || many1(letter());
+    let str_ = |x| string(x).skip(skip_spaces());
 
-    //We can use tuples to run several parsers in sequence
-    //The resulting type is a tuple containing each parsers output
-    let pair = (lex_char('('),
-                expr(),
-                lex_char(','),
-                expr(),
-                lex_char(')'))
-                   .map(|t| Expr::Pair(Box::new(t.1), Box::new(t.3)));
+    let name = || word().map(Name);
+    let var = name().map(Expr::Var);
+
+    let app = (expr(), expr()).map(|t| Expr::App(Box::new(t.0), Box::new(t.1)));
+    let app_ = between(lex_char('('), lex_char(')'), app);
+
+    let lam = (str_("lam"), lex_char('['), name(), lex_char(']'), expr()).map(|t| Expr::Lam(t.2, Box::new(t.4)));
+    let lam_ = between(lex_char('('), lex_char(')'), lam);
+
+    let let_ = (str_("let"), lex_char('('), lex_char('['), name(), expr(), lex_char(']'), lex_char(')'), expr()).map(|t| Expr::Let(t.3, Box::new(t.4), Box::new(t.7)));
+    let let__ = between(lex_char('('), lex_char(')'), let_);
 
     choice((
-        word.map(Expr::Id),
-        array.map(Expr::Array),
-        pair,
+        var,
+        lam_,
+        let__,
+        app_,
     ))
         .skip(skip_spaces())
 }

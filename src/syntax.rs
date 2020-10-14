@@ -1,7 +1,7 @@
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Name(pub String);
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Var(Name),
     App(Box<Expr>, Box<Expr>),
@@ -13,13 +13,13 @@ pub enum Expr {
     Prim(PrimOp),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Lit {
     LInt(u64),
     LBool(bool),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrimOp {
     Add,
     Sub,
