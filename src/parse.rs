@@ -47,7 +47,10 @@ where
     )
         .map(|t| Expr::Let(t.3, Box::new(t.4), Box::new(t.7)));
 
-    let parenthesized = choice((lam, let_, app));
+    let if_ = (str_("if"), expr(), expr(), expr())
+        .map(|t| Expr::If(Box::new(t.1), Box::new(t.2), Box::new(t.3)));
+
+    let parenthesized = choice((lam, let_, app, if_));
 
     choice((var, between(lex_char('('), lex_char(')'), parenthesized))).skip(skip_spaces())
 }
