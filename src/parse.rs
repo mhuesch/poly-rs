@@ -30,19 +30,20 @@ pub fn expr_<Input>() -> impl Parser< Input, Output = Expr>
     let var = name().map(Expr::Var);
 
     let app = (expr(), expr()).map(|t| Expr::App(Box::new(t.0), Box::new(t.1)));
-    let app_ = between(lex_char('('), lex_char(')'), app);
 
     let lam = (str_("lam"), lex_char('['), name(), lex_char(']'), expr()).map(|t| Expr::Lam(t.2, Box::new(t.4)));
-    let lam_ = between(lex_char('('), lex_char(')'), lam);
 
     let let_ = (str_("let"), lex_char('('), lex_char('['), name(), expr(), lex_char(']'), lex_char(')'), expr()).map(|t| Expr::Let(t.3, Box::new(t.4), Box::new(t.7)));
-    let let__ = between(lex_char('('), lex_char(')'), let_);
+
+    let parenthesized = choice((
+            lam,
+            let_,
+            app,
+            ));
 
     choice((
         var,
-        lam_,
-        let__,
-        app_,
+        between(lex_char('('), lex_char(')'), parenthesized),
     ))
         .skip(skip_spaces())
 }
