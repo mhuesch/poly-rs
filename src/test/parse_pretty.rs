@@ -29,20 +29,27 @@ pub mod parse_unit {
         App(Box::new(e1()), Box::new(e1()))
     }
     fn e3() -> Expr {
-        Fix(Box::new(Prim(PrimOp::Add)))
+        Fix(Box::new(e0()))
     }
     fn e4() -> Expr {
         If(
-            Box::new(Lit(Lit::LBool(true))),
-            Box::new(e2()),
-            Box::new(e3()),
+            Box::new(e0()),
+            Box::new(e0()),
+            Box::new(e0()),
         )
     }
     fn e5() -> Expr {
         Var(Name("free".to_string()))
     }
     fn e6() -> Expr {
-        Let(Name("v".to_string()), Box::new(e5()), Box::new(e4()))
+        Let(Name("v".to_string()), Box::new(e0()), Box::new(e0()))
+    }
+    fn e7() -> Expr {
+        If(
+            Box::new(Lit(Lit::LBool(true))),
+            Box::new(e2()),
+            Box::new(e3()),
+        )
     }
 
     #[test]
@@ -62,12 +69,12 @@ pub mod parse_unit {
 
     #[test]
     fn ex3() {
-        check_parse_expr!("(fix +)", e3());
+        check_parse_expr!("(fix x)", e3());
     }
 
     #[test]
     fn ex4() {
-        check_parse_expr!("(if true ((lam [x] x) (lam [x] x)) (fix +))", e4());
+        check_parse_expr!("(if x x x)", e4());
     }
 
     #[test]
@@ -77,11 +84,11 @@ pub mod parse_unit {
 
     #[test]
     fn ex6() {
-        check_parse_expr!("(let ([x free]) (if true ((lam [x] x) (lam [x] x)) (fix +)))", e6());
+        check_parse_expr!("(let ([v x]) x)", e6());
     }
 
     #[test]
-    fn exHuh() {
+    fn ex_huh() {
         check_parse_expr!("(x x)", App(Box::new(e0()), Box::new(e0())));
     }
 }
