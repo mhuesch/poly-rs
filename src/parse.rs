@@ -7,16 +7,6 @@ use combine::{
     Parser,
 };
 
-fn whitespace<Input>() -> impl Parser<Input>
-where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-{
-    let comment = (token(';'), skip_many(satisfy(|c| c != '\n'))).map(|_| ());
-    // this wrapped approach will skip alternating whitespace and comments
-    skip_many(skip_many1(spaces()).or(comment))
-}
-
 #[derive(Debug, PartialEq)]
 pub enum Expr {
     Id(String),
