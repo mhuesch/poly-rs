@@ -1,11 +1,7 @@
-use combine::error::{ParseError, StdParseResult};
+use combine::error::ParseError;
 use combine::parser::char::{char, digit, letter, spaces, string};
-use combine::stream::position;
-use combine::stream::{Positioned, Stream};
-use combine::{
-    attempt, between, choice, many1, optional, parser, satisfy, sep_by, skip_many, skip_many1,
-    token, EasyParser, Parser,
-};
+use combine::stream::Stream;
+use combine::{attempt, between, choice, many1, optional, parser, Parser};
 
 use super::syntax::*;
 

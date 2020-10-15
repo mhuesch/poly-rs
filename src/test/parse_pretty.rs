@@ -46,7 +46,7 @@ pub mod parse_unit {
     fn e6() -> Expr {
         Let(Name("v".to_string()), Box::new(e0()), Box::new(e0()))
     }
-    fn e7() -> Expr {
+    fn _e7() -> Expr {
         If(
             Box::new(Lit(Lit::LBool(true))),
             Box::new(e2()),
@@ -146,17 +146,14 @@ pub mod roundtrip {
     use combine::parser::Parser;
     use combine::stream::easy;
 
-    use crate::parse::*;
-    use crate::pretty::*;
-    use crate::syntax::{Lit, *};
-    use Expr::*;
+    use crate::{parse::*, pretty::*, syntax::*};
 
     #[quickcheck]
     fn parse_pretty_roundtrip(e: Expr) -> bool {
         let s = to_pretty(e.ppr(), 80);
         let res = expr().parse(easy::Stream(&s[..]));
         match res {
-            Ok((v, stream)) if stream == easy::Stream("") => true,
+            Ok((_, stream)) if stream == easy::Stream("") => true,
             _ => false,
         }
     }

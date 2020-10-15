@@ -1,4 +1,4 @@
-use quickcheck::{Arbitrary, Gen, RngCore};
+use quickcheck::{Arbitrary, Gen};
 use rand::Rng;
 
 use crate::syntax::*;

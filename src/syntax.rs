@@ -29,6 +29,7 @@ pub enum PrimOp {
 
 pub struct Decl(pub String, pub Expr);
 
+#[allow(dead_code)]
 pub struct Program {
     p_decls: Vec<Decl>,
     p_body: Expr,
