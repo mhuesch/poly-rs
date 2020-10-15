@@ -69,12 +69,12 @@ where
 
     let fix = (str_("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
-    let parenthesized = choice((attempt(lam), let_, if_, fix, app));
+    let parenthesized = choice((attempt(lam), attempt(let_), attempt(if_), attempt(fix), app));
 
     choice((
         attempt(lit),
         attempt(prim_op),
-        var,
+        attempt(var),
         between(lex_char('('), lex_char(')'), parenthesized),
     ))
     .skip(skip_spaces())

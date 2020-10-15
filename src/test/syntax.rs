@@ -5,8 +5,7 @@ use crate::syntax::*;
 
 impl Arbitrary for Expr {
     fn arbitrary<G: Gen>(g: &mut G) -> Expr {
-        let size = g.size();
-        gen_expr(g, size)
+        gen_expr(g, g.size())
     }
 
     fn shrink(&self) -> Box<dyn Iterator<Item = Expr>> {
