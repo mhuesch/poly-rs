@@ -1,4 +1,4 @@
-use quickcheck::{Arbitrary, Gen};
+use quickcheck::{empty_shrinker, Arbitrary, Gen};
 use rand::Rng;
 
 use crate::syntax::*;
@@ -7,6 +7,39 @@ impl Arbitrary for Expr {
     fn arbitrary<G: Gen>(g: &mut G) -> Expr {
         let size = g.size();
         gen_expr(g, size)
+    }
+
+    fn shrink(&self) -> Box<dyn Iterator<Item = Expr>> {
+        match &*self {
+            Expr::App(f, x) => Box::new(
+                (f.clone(), x.clone())
+                    .shrink()
+                    .map(|(f_, x_)| Expr::App(f_, x_)),
+            ),
+            Expr::Lam(nm, bd) => {
+                let nm_ = nm.clone();
+                Box::new(
+                    bd.clone()
+                        .shrink()
+                        .map(move |bd_| Expr::Lam(nm_.clone(), bd_)),
+                )
+            }
+            Expr::Let(nm, e, bd) => {
+                let nm_ = nm.clone();
+                Box::new(
+                    (e.clone(), bd.clone())
+                        .shrink()
+                        .map(move |(e_, bd_)| Expr::Let(nm_.clone(), e_, bd_)),
+                )
+            }
+            Expr::If(tst, thn, els) => Box::new(
+                (tst.clone(), thn.clone(), els.clone())
+                    .shrink()
+                    .map(|(tst_, thn_, els_)| Expr::If(tst_, thn_, els_)),
+            ),
+            Expr::Fix(bd) => Box::new(bd.shrink().map(|bd_| Expr::Fix(bd_))),
+            _ => empty_shrinker(),
+        }
     }
 }
 
