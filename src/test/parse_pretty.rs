@@ -108,4 +108,36 @@ pub mod parse_unit {
     fn ex_huh() {
         check_parse_expr!("(x x)", App(Box::new(e0()), Box::new(e0())));
     }
+
+    #[test]
+    fn ex_prim_1() {
+        check_parse_expr!("+", Prim(PrimOp::Add));
+    }
+
+    #[test]
+    fn ex_prim_2() {
+        check_parse_expr!("-", Prim(PrimOp::Sub));
+    }
+
+    #[test]
+    fn ex_prim_3() {
+        check_parse_expr!("*", Prim(PrimOp::Mul));
+    }
+
+    #[test]
+    fn ex_prim_4() {
+        check_parse_expr!("==", Prim(PrimOp::Eql));
+    }
+
+    #[test]
+    fn ex_prim_5() {
+        check_parse_expr!("(x +)", App(Box::new(e0()), Box::new(Prim(PrimOp::Add))));
+    }
+
+    #[test]
+    fn ex_prim_6() {
+        let f1 = App(Box::new(Prim(PrimOp::Add)), Box::new(Lit(Lit::LInt(4))));
+        let f2 = App(Box::new(f1), Box::new(Lit(Lit::LInt(9))));
+        check_parse_expr!("((+ 4) 9)", f2);
+    }
 }

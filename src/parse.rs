@@ -45,6 +45,12 @@ where
     });
     let lit = choice((l_bool, l_int)).map(|v| Expr::Lit(v));
 
+    let p_add = str_("+").map(|_| PrimOp::Add);
+    let p_sub = str_("-").map(|_| PrimOp::Sub);
+    let p_mul = str_("*").map(|_| PrimOp::Mul);
+    let p_eql = str_("==").map(|_| PrimOp::Eql);
+    let prim_op = choice((p_add, p_sub, p_mul, p_eql)).map(|v| Expr::Prim(v));
+
     let app = (expr(), expr()).map(|t| Expr::App(Box::new(t.0), Box::new(t.1)));
 
     let lam = (str_("lam"), lex_char('['), name(), lex_char(']'), expr())
@@ -71,6 +77,7 @@ where
 
     choice((
         attempt(lit),
+        attempt(prim_op),
         var,
         between(lex_char('('), lex_char(')'), parenthesized),
     ))
