@@ -141,3 +141,18 @@ pub mod parse_unit {
         check_parse_expr!("((+ 4) 9)", f2);
     }
 }
+
+pub mod roundtrip {
+    fn reverse<T: Clone>(xs: &[T]) -> Vec<T> {
+        let mut rev = vec![];
+        for x in xs {
+            rev.insert(0, x.clone())
+        }
+        rev
+    }
+
+    #[quickcheck]
+    fn double_reversal_is_identity(xs: Vec<isize>) -> bool {
+        xs == reverse(&reverse(&xs))
+    }
+}
