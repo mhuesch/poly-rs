@@ -29,28 +29,28 @@ fn gen_expr<G: Gen>(g: &mut G, size: usize) -> Expr {
             let f = gen_expr(g, size / 2);
             let a = gen_expr(g, size / 2);
             Expr::App(Box::new(f), Box::new(a))
-        },
+        }
         4 => {
             let nm = Name::arbitrary(g);
             let bd = gen_expr(g, size * 5 / 6);
             Expr::Lam(nm, Box::new(bd))
-        },
+        }
         5 => {
             let nm = Name::arbitrary(g);
-            let e  = gen_expr(g, size / 2);
+            let e = gen_expr(g, size / 2);
             let bd = gen_expr(g, size / 2);
             Expr::Let(nm, Box::new(e), Box::new(bd))
-        },
+        }
         6 => {
             let tst = gen_expr(g, size / 3);
             let thn = gen_expr(g, size / 3);
             let els = gen_expr(g, size / 3);
             Expr::If(Box::new(tst), Box::new(thn), Box::new(els))
-        },
+        }
         7 => {
             let bd = gen_expr(g, size * 5 / 6);
             Expr::Fix(Box::new(bd))
-        },
+        }
         _ => panic!("impossible: gen_expr: gen out of bounds"),
     }
 }
