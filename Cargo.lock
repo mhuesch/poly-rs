@@ -100,6 +100,7 @@ dependencies = [
  "pretty",
  "quickcheck",
  "quickcheck_macros",
+ "rand",
 ]
 
 [[package]]

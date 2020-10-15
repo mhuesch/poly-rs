@@ -143,16 +143,21 @@ pub mod parse_unit {
 }
 
 pub mod roundtrip {
-    fn reverse<T: Clone>(xs: &[T]) -> Vec<T> {
-        let mut rev = vec![];
-        for x in xs {
-            rev.insert(0, x.clone())
-        }
-        rev
-    }
+    use combine::parser::Parser;
+    use combine::stream::easy;
+
+    use crate::parse::*;
+    use crate::pretty::*;
+    use crate::syntax::{Lit, *};
+    use Expr::*;
 
     #[quickcheck]
-    fn double_reversal_is_identity(xs: Vec<isize>) -> bool {
-        xs == reverse(&reverse(&xs))
+    fn parse_pretty_roundtrip(e: Expr) -> bool {
+        let s = to_pretty(e.ppr(), 80);
+        let res = expr().parse(easy::Stream(&s[..]));
+        match res {
+            Ok((v, stream)) if stream == easy::Stream("") => true,
+            _ => false,
+        }
     }
 }
