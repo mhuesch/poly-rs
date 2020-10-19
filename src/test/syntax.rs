@@ -10,11 +10,14 @@ impl Arbitrary for Expr {
 
     fn shrink(&self) -> Box<dyn Iterator<Item = Expr>> {
         match &*self {
-            Expr::App(f, x) => Box::new(
-                (f.clone(), x.clone())
+            Expr::App(f, x) => {
+                let pairs = (f.clone(), x.clone())
                     .shrink()
-                    .map(|(f_, x_)| Expr::App(f_, x_)),
-            ),
+                    .map(|(f_, x_)| Expr::App(f_, x_));
+                let fs = f.shrink().map(|v| *v);
+                let xs = x.shrink().map(|v| *v);
+                Box::new(pairs.chain(fs).chain(xs))
+            }
             Expr::Lam(nm, bd) => {
                 let nm_ = nm.clone();
                 Box::new(
