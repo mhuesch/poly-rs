@@ -1,7 +1,7 @@
 use combine::error::ParseError;
 use combine::parser::char::{char, digit, letter, spaces, string};
 use combine::stream::Stream;
-use combine::{attempt, between, choice, many1, optional, parser, Parser};
+use combine::{attempt, between, choice, many1, optional, parser, Parser, not_followed_by};
 
 use super::syntax::*;
 
@@ -29,7 +29,7 @@ where
     let l_bool = choice((
         str_("true").map(|_| Lit::LBool(true)),
         (str_("false").map(|_| Lit::LBool(false))),
-    ));
+    )).skip(not_followed_by(letter()));
     let l_int = (optional(char('-')), integer()).map(|t| {
         // TODO handle this error, even though it should be impossible
         let string: String = t.1;
