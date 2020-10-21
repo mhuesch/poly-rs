@@ -9,7 +9,7 @@ macro_rules! check_parse_expr {
                     assert!(false, "parse left unconsumed input")
                 }
             }
-            Err(err) => assert!(false, "parse error: {:?}", err),
+            Err(err) => assert!(false, "parse error:\nparse input: {:?}\nexpected value: {:?}\nerror:{:?}", $a, $b, err),
         }
     };
 }
@@ -18,7 +18,7 @@ pub mod parse_unit {
     use combine::parser::Parser;
     use combine::stream::easy;
 
-    use crate::parse::*;
+    use crate::{parse::*, pretty::*};
     use crate::syntax::{Lit, *};
     use Expr::*;
 
@@ -139,6 +139,16 @@ pub mod parse_unit {
         let f1 = App(Box::new(Prim(PrimOp::Add)), Box::new(Lit(Lit::LInt(4))));
         let f2 = App(Box::new(f1), Box::new(Lit(Lit::LInt(9))));
         check_parse_expr!("((+ 4) 9)", f2);
+    }
+
+    #[test]
+    fn ex_qc_discovered_0() {
+        let e0 = App(Box::new(Prim(PrimOp::Sub)), Box::new(Lit(Lit::LInt(84))));
+        let e1 = Fix(Box::new(Lam(Name("a".to_string()), Box::new(e0))));
+        let e2 = Lam(Name("b".to_string()), Box::new(e1));
+        let e3 = Lam(Name("c".to_string()), Box::new(e2));
+        let s = to_pretty(e3.ppr(), 80);
+        check_parse_expr!(&s[..], e3);
     }
 }
 
