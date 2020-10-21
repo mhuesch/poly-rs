@@ -22,11 +22,12 @@ impl Arbitrary for Expr {
             }
             Expr::Lam(nm, bd) => {
                 let nm_ = nm.clone();
-                Box::new(
-                    bd.clone()
+                let chain = bd.clone()
                         .shrink()
-                        .map(move |bd_| Expr::Lam(nm_.clone(), bd_)),
-                )
+                        .map(move |bd_| Expr::Lam(nm_.clone(), bd_));
+                let bds = single_shrinker(*bd.clone())
+                    .chain(bd.shrink().map(|v| *v));
+                Box::new(chain.chain(bds))
             }
             Expr::Let(nm, e, bd) => {
                 let nm_ = nm.clone();
@@ -51,7 +52,12 @@ impl Arbitrary for Expr {
                     .chain(els.shrink().map(|v| *v));
                 Box::new(pairs.chain(tsts).chain(thns).chain(elss))
             }
-            Expr::Fix(bd) => Box::new(bd.shrink().map(|bd_| Expr::Fix(bd_))),
+            Expr::Fix(bd) => {
+                let chain = bd.shrink().map(|bd_| Expr::Fix(bd_));
+                let bds = single_shrinker(*bd.clone())
+                    .chain(bd.shrink().map(|v| *v));
+                Box::new(chain.chain(bds))
+            }
             _ => empty_shrinker(),
         }
     }
