@@ -179,6 +179,15 @@ pub mod parse_unit {
         let s = to_pretty(e1.ppr(), 80);
         check_parse_expr!(&s[..], e1);
     }
+
+    #[test]
+    fn ex_qc_discovered_5() {
+        let e0 = Var(Name("truej".to_string()));
+        let e1 = Var(Name("falsek".to_string()));
+        let e2 = App(Box::new(e0), Box::new(e1));
+        let s = to_pretty(e2.ppr(), 80);
+        check_parse_expr!(&s[..], e2);
+    }
 }
 
 pub mod roundtrip {
