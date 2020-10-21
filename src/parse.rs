@@ -49,11 +49,11 @@ where
 
     let app = (expr(), expr()).map(|t| Expr::App(Box::new(t.0), Box::new(t.1)));
 
-    let lam = (str_("lam"), lex_char('['), name(), lex_char(']'), expr())
+    let lam = (str_("lam "), lex_char('['), name(), lex_char(']'), expr())
         .map(|t| Expr::Lam(t.2, Box::new(t.4)));
 
     let let_ = (
-        str_("let"),
+        str_("let "),
         lex_char('('),
         lex_char('['),
         name(),
@@ -64,10 +64,10 @@ where
     )
         .map(|t| Expr::Let(t.3, Box::new(t.4), Box::new(t.7)));
 
-    let if_ = (str_("if"), expr(), expr(), expr())
+    let if_ = (str_("if "), expr(), expr(), expr())
         .map(|t| Expr::If(Box::new(t.1), Box::new(t.2), Box::new(t.3)));
 
-    let fix = (str_("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
+    let fix = (str_("fix "), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
     let parenthesized = choice((attempt(lam), attempt(let_), attempt(if_), attempt(fix), app));
 
