@@ -147,6 +147,38 @@ pub mod parse_unit {
         let s = to_pretty(e0.ppr(), 80);
         check_parse_expr!(&s[..], e0);
     }
+
+    #[test]
+    fn ex_qc_discovered_1() {
+        let e0 = Var(Name("fixio".to_string()));
+        let e1 = App(Box::new(e0), Box::new(Lit(Lit::LInt(42))));
+        let s = to_pretty(e1.ppr(), 80);
+        check_parse_expr!(&s[..], e1);
+    }
+
+    #[test]
+    fn ex_qc_discovered_2() {
+        let e0 = Var(Name("letio".to_string()));
+        let e1 = App(Box::new(e0), Box::new(Lit(Lit::LInt(42))));
+        let s = to_pretty(e1.ppr(), 80);
+        check_parse_expr!(&s[..], e1);
+    }
+
+    #[test]
+    fn ex_qc_discovered_3() {
+        let e0 = Var(Name("lamio".to_string()));
+        let e1 = App(Box::new(e0), Box::new(Lit(Lit::LInt(42))));
+        let s = to_pretty(e1.ppr(), 80);
+        check_parse_expr!(&s[..], e1);
+    }
+
+    #[test]
+    fn ex_qc_discovered_4() {
+        let e0 = Var(Name("ifio".to_string()));
+        let e1 = App(Box::new(e0), Box::new(Lit(Lit::LInt(42))));
+        let s = to_pretty(e1.ppr(), 80);
+        check_parse_expr!(&s[..], e1);
+    }
 }
 
 pub mod roundtrip {
