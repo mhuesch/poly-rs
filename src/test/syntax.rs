@@ -1,4 +1,4 @@
-use quickcheck::{empty_shrinker, Arbitrary, Gen};
+use quickcheck::{empty_shrinker, single_shrinker, Arbitrary, Gen};
 use rand::Rng;
 
 use crate::syntax::*;
@@ -14,8 +14,10 @@ impl Arbitrary for Expr {
                 let pairs = (f.clone(), x.clone())
                     .shrink()
                     .map(|(f_, x_)| Expr::App(f_, x_));
-                let fs = f.shrink().map(|v| *v);
-                let xs = x.shrink().map(|v| *v);
+                let fs = single_shrinker(*f.clone())
+                    .chain(f.shrink().map(|v| *v));
+                let xs = single_shrinker(*x.clone())
+                    .chain(x.shrink().map(|v| *v));
                 Box::new(pairs.chain(fs).chain(xs))
             }
             Expr::Lam(nm, bd) => {
