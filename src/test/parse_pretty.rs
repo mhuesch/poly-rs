@@ -144,11 +144,8 @@ pub mod parse_unit {
     #[test]
     fn ex_qc_discovered_0() {
         let e0 = App(Box::new(Prim(PrimOp::Sub)), Box::new(Lit(Lit::LInt(84))));
-        let e1 = Fix(Box::new(Lam(Name("a".to_string()), Box::new(e0))));
-        let e2 = Lam(Name("b".to_string()), Box::new(e1));
-        let e3 = Lam(Name("c".to_string()), Box::new(e2));
-        let s = to_pretty(e3.ppr(), 80);
-        check_parse_expr!(&s[..], e3);
+        let s = to_pretty(e0.ppr(), 80);
+        check_parse_expr!(&s[..], e0);
     }
 }
 
