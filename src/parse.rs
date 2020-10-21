@@ -30,7 +30,7 @@ where
         str_("true").map(|_| Lit::LBool(true)),
         (str_("false").map(|_| Lit::LBool(false))),
     ));
-    let l_int = (optional(lex_char('-')), integer()).map(|t| {
+    let l_int = (optional(char('-')), integer()).map(|t| {
         // TODO handle this error, even though it should be impossible
         let string: String = t.1;
         let num = string.parse::<i64>().unwrap();
