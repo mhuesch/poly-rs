@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Hash)]
 pub struct TV(pub String);
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -9,7 +9,7 @@ pub enum Type {
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub struct Scheme(Vec<TV>, Type);
+pub struct Scheme(pub Vec<TV>, pub Type);
 
 
 // type constructors
