@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    ops::Deref,
+};
 use core::iter::FromIterator;
 
 use super::syntax::*;
@@ -71,5 +74,14 @@ impl FromIterator<(Name, Scheme)> for Env
     fn from_iter<T: IntoIterator<Item = (Name, Scheme)>>(iter: T) -> Env {
         let hm: HashMap<Name, Scheme> = HashMap::from_iter(iter);
         Env(hm)
+    }
+}
+
+impl Deref for Env {
+    type Target = HashMap<Name, Scheme>;
+
+    fn deref(&self) -> &Self::Target {
+        let Env(hm) = self;
+        &hm
     }
 }

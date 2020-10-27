@@ -1,24 +1,20 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use super::types::{
-    TV,
-    Type,
-    Scheme,
+use super::{
+    env::*,
+    types::{
+        TV,
+        Type,
+        Scheme,
+    },
 };
-
-// TODO: unclear to me how useful this newtype is. I had first thought that
-// we could define impl methods on it to only allow addition of constraints -
-// logger style. however once we have a mutable reference to `Constraints`,
-// anything is possible, so we gain little guarantee on safety. so now I'm
-// inclined to revert to a type synonym.
-pub struct Constraints(Vec<Constraint>);
 
 pub struct Constraint(Type, Type);
 
 pub struct Subst(HashMap<TV, Type>);
 
-pub type Unifier = (Subst, Constraints);
+pub type Unifier = (Subst, Vec<Constraint>);
 
 pub struct InferState(u64);
 
@@ -130,4 +126,31 @@ impl Constraint {
             }
         }
     }
+}
+
+// INFO this is most of the reason I opted to introduce the `Env` type at all:
+// it's not possible to define an `impl` on a foreign type. however it's not
+// clear that this is really necessary. it's nice to have the `apply` / `ftv`
+// API consistency, but wouldn't be too bad to just have a one-off function for
+// `Env`.
+impl Env {
+    pub fn apply(self, subst: &Subst) -> Env {
+        self.iter().map(|(nm, sc)| (nm.clone(), sc.clone().apply(subst))).collect()
+    }
+    pub fn ftv(self) -> HashSet<TV> {
+        let mut hs = HashSet::new();
+        for sc in self.values() {
+            let sc_ftvs = sc.clone().ftv();
+            hs = hs.union(&sc_ftvs).map(|x| x.clone()).collect();
+        }
+        hs
+    }
+}
+
+pub enum TypeError {
+    UnificationFail(Type, Type),
+    InfiniteType(TV, Type),
+    UnboundVariable(String),
+    Ambigious(Vec<Constraint>),
+    UnificationMismatch(Vec<Type>, Vec<Type>),
 }
