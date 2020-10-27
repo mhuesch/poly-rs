@@ -9,7 +9,11 @@ macro_rules! check_parse_expr {
                     assert!(false, "parse left unconsumed input")
                 }
             }
-            Err(err) => assert!(false, "parse error:\nparse input: {:?}\nexpected value: {:?}\nerror:{:?}", $a, $b, err),
+            Err(err) => assert!(
+                false,
+                "parse error:\nparse input: {:?}\nexpected value: {:?}\nerror:{:?}",
+                $a, $b, err
+            ),
         }
     };
 }
@@ -18,8 +22,8 @@ pub mod parse_unit {
     use combine::parser::Parser;
     use combine::stream::easy;
 
-    use crate::{parse::*, pretty::*};
     use crate::syntax::{Lit, *};
+    use crate::{parse::*, pretty::*};
     use Expr::*;
 
     fn n() -> Name {

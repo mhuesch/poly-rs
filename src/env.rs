@@ -1,8 +1,5 @@
-use std::{
-    collections::HashMap,
-    ops::Deref,
-};
 use core::iter::FromIterator;
+use std::{collections::HashMap, ops::Deref};
 
 use super::syntax::*;
 use super::types::*;
@@ -10,20 +7,19 @@ use super::types::*;
 pub struct Env(HashMap<Name, Scheme>);
 
 impl Env {
-
     pub fn new() -> Env {
         Env(HashMap::new())
     }
 
     pub fn extend(&mut self, nm: Name, sc: Scheme) -> Option<Scheme> {
         match self {
-            Env(hm) => hm.insert(nm, sc)
+            Env(hm) => hm.insert(nm, sc),
         }
     }
 
     pub fn remove(&mut self, nm: Name) -> Option<Scheme> {
         match self {
-            Env(hm) => hm.remove(&nm)
+            Env(hm) => hm.remove(&nm),
         }
     }
 
@@ -35,9 +31,9 @@ impl Env {
         hm.extend(xs)
     }
 
-    pub fn get(& self, nm: &Name) -> Option<&Scheme> {
+    pub fn get(&self, nm: &Name) -> Option<&Scheme> {
         match self {
-            Env(hm) => hm.get(nm)
+            Env(hm) => hm.get(nm),
         }
     }
 
@@ -60,17 +56,14 @@ impl Env {
         env
     }
 
-    pub fn keys<T>(&self) -> Vec<Name>
-    {
+    pub fn keys<T>(&self) -> Vec<Name> {
         let Env(hm) = self;
         // TODO is this avoidable waste?
         hm.keys().map(|x| x.clone()).collect()
     }
-
 }
 
-impl FromIterator<(Name, Scheme)> for Env
-{
+impl FromIterator<(Name, Scheme)> for Env {
     fn from_iter<T: IntoIterator<Item = (Name, Scheme)>>(iter: T) -> Env {
         let hm: HashMap<Name, Scheme> = HashMap::from_iter(iter);
         Env(hm)

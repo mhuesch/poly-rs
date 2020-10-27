@@ -11,7 +11,6 @@ pub enum Type {
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub struct Scheme(pub Vec<TV>, pub Type);
 
-
 // type constructors
 
 pub fn type_int() -> Type {

@@ -3,11 +3,7 @@ use std::collections::HashSet;
 
 use super::{
     env::*,
-    types::{
-        TV,
-        Type,
-        Scheme,
-    },
+    types::{Scheme, Type, TV},
 };
 
 pub struct Constraint(Type, Type);
@@ -50,12 +46,12 @@ impl Type {
                     None => self,
                     Some(x) => x.clone(),
                 }
-            },
+            }
             Type::TArr(t1, t2) => {
                 let t1_ = t1.apply(subst);
                 let t2_ = t2.apply(subst);
                 Type::TArr(Box::new(t1_), Box::new(t2_))
-            },
+            }
         }
     }
 
@@ -66,7 +62,7 @@ impl Type {
                 let mut hs = HashSet::new();
                 hs.insert(a);
                 hs
-            },
+            }
             Type::TArr(t1, t2) => {
                 let hs2 = t2.ftv();
                 // TODO figure out if this is performing unnecessary copying
@@ -102,7 +98,7 @@ impl Scheme {
                     hs.remove(&x);
                 }
                 hs
-            },
+            }
         }
     }
 }
@@ -135,7 +131,9 @@ impl Constraint {
 // `Env`.
 impl Env {
     pub fn apply(self, subst: &Subst) -> Env {
-        self.iter().map(|(nm, sc)| (nm.clone(), sc.clone().apply(subst))).collect()
+        self.iter()
+            .map(|(nm, sc)| (nm.clone(), sc.clone().apply(subst)))
+            .collect()
     }
     pub fn ftv(self) -> HashSet<TV> {
         let mut hs = HashSet::new();
