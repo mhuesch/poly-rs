@@ -247,6 +247,14 @@ fn instantiate(is: &mut InferState, sc: &Scheme) -> Result<Type, TypeError> {
     }
 }
 
+fn generalize(env: Env, ty: Type) -> Scheme {
+    let ty_ = ty.clone();
+    let ty_ftv = ty.ftv();
+    let env_ftv = env.ftv();
+    let free_vars = ty_ftv.difference(&env_ftv).map(|x| x.clone());
+    Scheme(free_vars.collect(), ty_)
+}
+
 pub fn infer_lit(lit: Lit) -> Type {
     match lit {
         Lit::LInt(_) => type_int(),
