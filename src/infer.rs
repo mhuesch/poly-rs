@@ -148,13 +148,15 @@ pub enum TypeError {
 
 pub fn infer(
     env: Env,
-    csts: &mut Vec<Constraint>,
     is: &mut InferState,
     expr: Expr,
-) -> Result<Type, TypeError> {
+) -> Result<(Type, Vec<Constraint>), TypeError> {
     match expr {
-        Expr::Lit(lit) => Ok(infer_lit(lit)),
-        Expr::Var(nm) => lookup_env(&env, is, &nm),
+        Expr::Lit(lit) => Ok((infer_lit(lit), Vec::new())),
+        Expr::Var(nm) => {
+            let ty = lookup_env(&env, is, &nm)?;
+            Ok((ty, Vec::new()))
+        }
         Expr::Lam(nm, bd) => {
             let tv = is.fresh();
             let sc = Scheme(Vec::new(), tv.clone());
@@ -163,19 +165,21 @@ pub fn infer(
                 le.replace(nm, sc);
                 le
             };
-            let typ = infer(local_env, csts, is, *bd)?;
-            Ok(Type::TArr(Box::new(tv), Box::new(typ)))
+            let (typ, csts) = infer(local_env, is, *bd)?;
+            let ret = Type::TArr(Box::new(tv), Box::new(typ));
+            Ok((ret, csts))
         }
         Expr::App(e1, e2) => {
-            let t1 = infer(env.clone(), csts, is, *e1)?;
-            let t2 = infer(env, csts, is, *e2)?;
+            let (t1, mut csts1) = infer(env.clone(), is, *e1)?;
+            let (t2, mut csts2) = infer(env, is, *e2)?;
             let tv = is.fresh();
             let cst = Constraint(t1, Type::TArr(Box::new(t2), Box::new(tv.clone())));
-            csts.push(cst);
-            Ok(tv)
+            csts1.append(&mut csts2);
+            csts1.push(cst);
+            Ok((tv, csts1))
         }
         Expr::Let(nm, e, bd) => {
-            let t_e = infer(env.clone(), csts, is, *e)?;
+            let (t_e, csts_e) = infer(env.clone(), is, *e)?;
             todo!()
         }
     }
