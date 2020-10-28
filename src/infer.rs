@@ -1,10 +1,7 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::iter::repeat_with;
 
-use super::{
-    env::*,
-    types::{Scheme, Type, TV},
-};
+use super::{env::*, syntax::*, types::*};
 
 pub struct Constraint(Type, Type);
 
@@ -144,7 +141,57 @@ impl Env {
 pub enum TypeError {
     UnificationFail(Type, Type),
     InfiniteType(TV, Type),
-    UnboundVariable(String),
+    UnboundVariable(Name),
     Ambigious(Vec<Constraint>),
     UnificationMismatch(Vec<Type>, Vec<Type>),
+}
+
+pub fn infer(
+    env: Env,
+    csts: Vec<Constraint>,
+    is: &mut InferState,
+    expr: Expr,
+) -> Result<Type, TypeError> {
+    match expr {
+        Expr::Lit(lit) => Ok(infer_lit(lit)),
+        Expr::Var(nm) => lookup_env(&env, is, &nm),
+        Expr::Lam(nm, bd) => {
+            let tv = is.fresh();
+            let sc = Scheme(Vec::new(), tv.clone());
+            let local_env = {
+                let mut le = env.clone();
+                le.replace(nm, sc);
+                le
+            };
+            let typ = infer(local_env, csts, is, *bd)?;
+            Ok(Type::TArr(Box::new(tv), Box::new(typ)))
+        }
+    }
+}
+
+fn lookup_env(env: &Env, is: &mut InferState, nm: &Name) -> Result<Type, TypeError> {
+    match env.get(nm) {
+        None => Err(TypeError::UnboundVariable(nm.clone())),
+        Some(sc) => instantiate(is, sc),
+    }
+}
+
+fn instantiate(is: &mut InferState, sc: &Scheme) -> Result<Type, TypeError> {
+    match sc {
+        Scheme(xs, ty) => {
+            let subst: Subst = xs
+                .clone()
+                .into_iter()
+                .zip(repeat_with(|| is.fresh()))
+                .collect();
+            Ok(ty.clone().apply(&subst))
+        }
+    }
+}
+
+pub fn infer_lit(lit: Lit) -> Type {
+    match lit {
+        Lit::LInt(_) => type_int(),
+        Lit::LBool(_) => type_bool(),
+    }
 }

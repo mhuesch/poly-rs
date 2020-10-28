@@ -4,6 +4,7 @@ use std::{collections::HashMap, ops::Deref};
 use super::syntax::*;
 use super::types::*;
 
+#[derive(Clone)]
 pub struct Env(HashMap<Name, Scheme>);
 
 impl Env {
@@ -60,6 +61,11 @@ impl Env {
         let Env(hm) = self;
         // TODO is this avoidable waste?
         hm.keys().map(|x| x.clone()).collect()
+    }
+
+    pub fn replace(&mut self, nm: Name, sc: Scheme) {
+        self.remove(nm.clone());
+        self.extend(nm, sc);
     }
 }
 
