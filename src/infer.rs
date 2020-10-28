@@ -179,13 +179,51 @@ pub fn infer(
             Ok((tv, csts1))
         }
         Expr::Let(nm, e, bd) => {
-            let (t_e, csts_e) = infer(env.clone(), is, *e)?;
-            todo!()
+            let (t_e, mut csts_e) = infer(env.clone(), is, *e)?;
+            let subst = run_solve(&csts_e)?;
+            let sc = generalize(env.clone().apply(&subst), t_e.apply(&subst));
+            let local_env = {
+                let mut le = env;
+                le.replace(nm, sc);
+                le.apply(&subst)
+            };
+            let (t_bd, mut csts_bd) = infer(local_env, is, *bd)?;
+            csts_e.append(&mut csts_bd);
+            Ok((t_bd, csts_e))
+        }
+        Expr::Fix(bd) => {
+            let (t_bd, mut csts_bd) = infer(env.clone(), is, *bd)?;
+            let tv = is.fresh();
+            let cst = Constraint(t_bd, Type::TArr(Box::new(tv.clone()), Box::new(tv.clone())));
+            csts_bd.push(cst);
+            Ok((tv, csts_bd))
+        }
+        Expr::Prim(op) => {
+            // TODO figure out if this is borked. `poly` takes the approach of
+            // wrapping primop application, whereas I allow primops to be first
+            // class functions.
+            Ok((infer_primop(op), Vec::new()))
+        }
+        Expr::If(tst, thn, els) => {
+            let (t_tst, mut csts_tst) = infer(env.clone(), is, *tst)?;
+            let (t_thn, mut csts_thn) = infer(env.clone(), is, *thn)?;
+            let (t_els, mut csts_els) = infer(env, is, *els)?;
+            let cst_1 = Constraint(t_tst, type_bool());
+            let cst_2 = Constraint(t_thn.clone(), t_els);
+            csts_tst.append(&mut csts_thn);
+            csts_tst.append(&mut csts_els);
+            csts_tst.push(cst_1);
+            csts_tst.push(cst_2);
+            Ok((t_thn, csts_tst))
         }
     }
 }
 
 fn generalize(env: Env, ty: Type) -> Scheme {
+    todo!()
+}
+
+fn run_solve(csts: &Vec<Constraint>) -> Result<Subst, TypeError> {
     todo!()
 }
 
@@ -214,4 +252,18 @@ pub fn infer_lit(lit: Lit) -> Type {
         Lit::LInt(_) => type_int(),
         Lit::LBool(_) => type_bool(),
     }
+}
+
+fn infer_primop(op: PrimOp) -> Type {
+    match op {
+        PrimOp::Add => binop_arr(type_int(), type_int()),
+        PrimOp::Mul => binop_arr(type_int(), type_int()),
+        PrimOp::Sub => binop_arr(type_int(), type_int()),
+        PrimOp::Eql => binop_arr(type_int(), type_bool()),
+    }
+}
+
+fn binop_arr(arg: Type, ret: Type) -> Type {
+    let inner = Type::TArr(Box::new(arg.clone()), Box::new(ret));
+    Type::TArr(Box::new(arg), Box::new(inner))
 }
