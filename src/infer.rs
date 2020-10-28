@@ -40,12 +40,10 @@ impl Type {
     pub fn apply(self, subst: &Subst) -> Type {
         match self {
             Type::TCon(a) => Type::TCon(a),
-            Type::TVar(ref a) => {
-                match subst.get(&a) {
-                    None => self,
-                    Some(x) => x.clone(),
-                }
-            }
+            Type::TVar(ref a) => match subst.get(&a) {
+                None => self,
+                Some(x) => x.clone(),
+            },
             Type::TArr(t1, t2) => {
                 let t1_ = t1.apply(subst);
                 let t2_ = t2.apply(subst);
