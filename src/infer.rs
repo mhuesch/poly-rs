@@ -8,7 +8,7 @@ use super::{
 
 pub struct Constraint(Type, Type);
 
-pub struct Subst(HashMap<TV, Type>);
+pub type Subst = HashMap<TV, Type>;
 
 pub type Unifier = (Subst, Vec<Constraint>);
 
@@ -41,8 +41,7 @@ impl Type {
         match self {
             Type::TCon(a) => Type::TCon(a),
             Type::TVar(ref a) => {
-                let Subst(hm) = subst;
-                match hm.get(&a) {
+                match subst.get(&a) {
                     None => self,
                     Some(x) => x.clone(),
                 }
@@ -76,15 +75,14 @@ impl Type {
 
 impl Scheme {
     pub fn apply(self, subst: &Subst) -> Scheme {
-        let Subst(hm) = subst;
         match self {
             Scheme(xs, ty) => {
                 let subst2 = {
-                    let mut hm_ = hm.clone();
+                    let mut subst_ = subst.clone();
                     for x in &xs {
-                        hm_.remove(&x);
+                        subst_.remove(&x);
                     }
-                    Subst(hm_)
+                    subst_
                 };
                 Scheme(xs, ty.apply(&subst2))
             }
