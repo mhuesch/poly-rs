@@ -148,7 +148,7 @@ pub enum TypeError {
 
 pub fn infer(
     env: Env,
-    csts: Vec<Constraint>,
+    csts: &mut Vec<Constraint>,
     is: &mut InferState,
     expr: Expr,
 ) -> Result<Type, TypeError> {
@@ -166,7 +166,23 @@ pub fn infer(
             let typ = infer(local_env, csts, is, *bd)?;
             Ok(Type::TArr(Box::new(tv), Box::new(typ)))
         }
+        Expr::App(e1, e2) => {
+            let t1 = infer(env.clone(), csts, is, *e1)?;
+            let t2 = infer(env, csts, is, *e2)?;
+            let tv = is.fresh();
+            let cst = Constraint(t1, Type::TArr(Box::new(t2), Box::new(tv.clone())));
+            csts.push(cst);
+            Ok(tv)
+        }
+        Expr::Let(nm, e, bd) => {
+            let t_e = infer(env.clone(), csts, is, *e)?;
+            todo!()
+        }
     }
+}
+
+fn generalize(env: Env, ty: Type) -> Scheme {
+    todo!()
 }
 
 fn lookup_env(env: &Env, is: &mut InferState, nm: &Name) -> Result<Type, TypeError> {
