@@ -3,11 +3,10 @@ use std::iter::repeat_with;
 
 use super::{env::*, syntax::*, types::*};
 
+#[derive(Clone)]
 pub struct Constraint(Type, Type);
 
 pub type Subst = HashMap<TV, Type>;
-
-pub type Unifier = (Subst, Vec<Constraint>);
 
 pub struct InferState(u64);
 
@@ -180,7 +179,7 @@ pub fn infer(
         }
         Expr::Let(nm, e, bd) => {
             let (t_e, mut csts_e) = infer(env.clone(), is, *e)?;
-            let subst = run_solve(&csts_e)?;
+            let subst = run_solve(csts_e.to_vec())?;
             let sc = generalize(env.clone().apply(&subst), t_e.apply(&subst));
             let local_env = {
                 let mut le = env;
@@ -219,12 +218,60 @@ pub fn infer(
     }
 }
 
-fn generalize(env: Env, ty: Type) -> Scheme {
+// TODO can we take a reference to avoid cloning?
+fn run_solve(csts: Vec<Constraint>) -> Result<Subst, TypeError> {
+    solver(HashMap::new(), csts)
+}
+
+fn solver(subst: Subst, mut csts: Vec<Constraint>) -> Result<Subst, TypeError> {
+    match csts.pop() {
+        None => Ok(subst),
+        Some(Constraint(t1, t2)) => {
+            let subst_1 = unifies(t1, t2)?;
+            let csts_subbed = csts.into_iter().map(|cst| cst.apply(&subst_1)).collect();
+            solver(compose(subst_1, subst), csts_subbed)
+        }
+    }
+}
+
+fn unifies(t1: Type, t2: Type) -> Result<Subst, TypeError> {
+    match (t1, t2) {
+        (a, b) if a == b => Ok(HashMap::new()),
+        (Type::TVar(v), t) => bind(v, t),
+        (t, Type::TVar(v)) => bind(v, t),
+        (Type::TArr(t1, t2), Type::TArr(t3, t4)) => unify_many(vec![*t1, *t2], vec![*t3, *t4]),
+        (a, b) => Err(TypeError::UnificationFail(a, b)),
+    }
+}
+
+fn unify_many(ts_1: Vec<Type>, ts_2: Vec<Type>) -> Result<Subst, TypeError> {
     todo!()
 }
 
-fn run_solve(csts: &Vec<Constraint>) -> Result<Subst, TypeError> {
-    todo!()
+fn bind(a: TV, t: Type) -> Result<Subst, TypeError> {
+    if t.clone() == Type::TVar(a.clone()) {
+        Ok(HashMap::new())
+    } else if occurs_check(&a, t.clone()) {
+        Err(TypeError::InfiniteType(a, t))
+    } else {
+        let mut hm = HashMap::new();
+        hm.insert(a, t);
+        Ok(hm)
+    }
+}
+
+fn occurs_check(a: &TV, t: Type) -> bool {
+    t.ftv().contains(&a)
+}
+
+fn compose(mut s1: Subst, mut s2: Subst) -> Subst {
+    for (_, typ) in s2.iter_mut() {
+        *typ = typ.clone().apply(&s1);
+    }
+    // INFO we want a union which is biased to `s2`. `extend` will overwrite
+    // entries in `s1`.
+    s1.extend(s2.into_iter());
+    s1
 }
 
 fn lookup_env(env: &Env, is: &mut InferState, nm: &Name) -> Result<Type, TypeError> {
