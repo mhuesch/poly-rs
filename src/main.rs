@@ -16,14 +16,22 @@ fn main() {
                 match expr().parse(easy::Stream(&line[..])) {
                     Err(err) => println!("parse error: {}", err),
                     Ok((e, _)) => {
-                        println!("{:?}", e);
+                        println!("ast: {:?}\n", e);
                         let env = Env::new();
-                        let res = constraints_expr(env, e);
-                        println!("{:?}", res);
+                        match constraints_expr(env, e) {
+                            Err(err) => println!("type error: {:?}", err),
+                            Ok((csts, subst, ty, sc)) => {
+                                println!("constraints: {:?}\n", csts);
+                                println!("subst: {:?}\n", subst);
+                                println!("type: {:?}\n", ty);
+                                println!("scheme: {:?}", sc);
+                            }
+                        }
                     }
                 };
             }
-            Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
+            Err(ReadlineError::Interrupted) => continue,
+            Err(ReadlineError::Eof) => {
                 println!("\nbye!");
                 break;
             }
