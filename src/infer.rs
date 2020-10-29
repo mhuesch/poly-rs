@@ -244,8 +244,20 @@ fn unifies(t1: Type, t2: Type) -> Result<Subst, TypeError> {
     }
 }
 
-fn unify_many(ts_1: Vec<Type>, ts_2: Vec<Type>) -> Result<Subst, TypeError> {
-    todo!()
+fn unify_many(mut ts_1: Vec<Type>, mut ts_2: Vec<Type>) -> Result<Subst, TypeError> {
+    if ts_1.is_empty() != ts_2.is_empty() {
+        Err(TypeError::UnificationMismatch(ts_1, ts_2))
+    } else {
+        match (ts_1.pop(), ts_2.pop()) {
+            (None, None) => Ok(HashMap::new()),
+            (Some(t1), Some(t2)) => {
+                let subst_1 = unifies(t1, t2)?;
+                let subst_2 = unify_many(ts_1, ts_2)?;
+                Ok(compose(subst_2, subst_1))
+            }
+            _ => panic!("unify_many: impossible: case handled above"),
+        }
+    }
 }
 
 fn bind(a: TV, t: Type) -> Result<Subst, TypeError> {
