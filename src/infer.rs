@@ -8,10 +8,10 @@ pub struct Constraint(Type, Type);
 
 pub type Subst = HashMap<TV, Type>;
 
-pub struct InferState(u64);
+struct InferState(u64);
 
 impl InferState {
-    pub fn new() -> InferState {
+    fn new() -> InferState {
         InferState(0)
     }
 
@@ -20,7 +20,11 @@ impl InferState {
     // also we could do more intelligible names a la sdiehl's iterator through
     // alphabetical names -
     // "a", "b", ... "z", "aa", "ab", ... "az", "ba", ...
-    pub fn fresh(&mut self) -> Type {
+    fn fresh(&mut self) -> Type {
+        Type::TVar(self.fresh_tv())
+    }
+
+    fn fresh_tv(&mut self) -> TV {
         let cnt = match self {
             InferState(c) => {
                 *c += 1;
@@ -28,12 +32,12 @@ impl InferState {
             }
         };
         let s = format!("t{}", cnt);
-        Type::TVar(TV(s))
+        TV(s)
     }
 }
 
 impl Type {
-    pub fn apply(self, subst: &Subst) -> Type {
+    fn apply(self, subst: &Subst) -> Type {
         match self {
             Type::TCon(a) => Type::TCon(a),
             Type::TVar(ref a) => match subst.get(&a) {
@@ -48,7 +52,7 @@ impl Type {
         }
     }
 
-    pub fn ftv(self) -> HashSet<TV> {
+    fn ftv(self) -> HashSet<TV> {
         match self {
             Type::TCon(_) => HashSet::new(),
             Type::TVar(a) => {
@@ -68,7 +72,7 @@ impl Type {
 }
 
 impl Scheme {
-    pub fn apply(self, subst: &Subst) -> Scheme {
+    fn apply(self, subst: &Subst) -> Scheme {
         match self {
             Scheme(xs, ty) => {
                 let subst2 = {
@@ -82,7 +86,7 @@ impl Scheme {
             }
         }
     }
-    pub fn ftv(self) -> HashSet<TV> {
+    fn ftv(self) -> HashSet<TV> {
         match self {
             Scheme(xs, ty) => {
                 let mut hs = ty.ftv();
@@ -96,7 +100,7 @@ impl Scheme {
 }
 
 impl Constraint {
-    pub fn apply(self, subst: &Subst) -> Constraint {
+    fn apply(self, subst: &Subst) -> Constraint {
         match self {
             Constraint(t1, t2) => {
                 let t1_ = t1.apply(subst);
@@ -105,7 +109,8 @@ impl Constraint {
             }
         }
     }
-    pub fn ftv(self) -> HashSet<TV> {
+    #[allow(dead_code)]
+    fn ftv(self) -> HashSet<TV> {
         match self {
             Constraint(t1, t2) => {
                 let hs2 = t2.ftv();
@@ -122,12 +127,12 @@ impl Constraint {
 // API consistency, but wouldn't be too bad to just have a one-off function for
 // `Env`.
 impl Env {
-    pub fn apply(self, subst: &Subst) -> Env {
+    fn apply(self, subst: &Subst) -> Env {
         self.iter()
             .map(|(nm, sc)| (nm.clone(), sc.clone().apply(subst)))
             .collect()
     }
-    pub fn ftv(self) -> HashSet<TV> {
+    fn ftv(self) -> HashSet<TV> {
         let mut hs = HashSet::new();
         for sc in self.values() {
             let sc_ftvs = sc.clone().ftv();
@@ -145,11 +150,7 @@ pub enum TypeError {
     UnificationMismatch(Vec<Type>, Vec<Type>),
 }
 
-pub fn infer(
-    env: Env,
-    is: &mut InferState,
-    expr: Expr,
-) -> Result<(Type, Vec<Constraint>), TypeError> {
+fn infer(env: Env, is: &mut InferState, expr: Expr) -> Result<(Type, Vec<Constraint>), TypeError> {
     match expr {
         Expr::Lit(lit) => Ok((infer_lit(lit), Vec::new())),
         Expr::Var(nm) => {
@@ -215,6 +216,82 @@ pub fn infer(
             csts_tst.push(cst_2);
             Ok((t_thn, csts_tst))
         }
+    }
+}
+
+pub fn infer_top(mut env: Env, mut bindings: Vec<(Name, Expr)>) -> Result<Env, TypeError> {
+    while let Some((name, expr)) = bindings.pop() {
+        let sc = infer_expr(env.clone(), expr)?;
+        env.extend(name, sc);
+    }
+    Ok(env)
+}
+
+fn infer_expr(env: Env, expr: Expr) -> Result<Scheme, TypeError> {
+    let mut is = InferState::new();
+    let (ty, csts) = infer(env, &mut is, expr)?;
+    let subst = run_solve(csts)?;
+    Ok(close_over(ty.apply(&subst)))
+}
+
+/// Return extra internal information, as compared to `infer_expr`.
+pub fn constraints_expr(
+    env: Env,
+    expr: Expr,
+) -> Result<(Vec<Constraint>, Subst, Type, Scheme), TypeError> {
+    let mut is = InferState::new();
+    let (ty, csts) = infer(env, &mut is, expr)?;
+    let subst = run_solve(csts.clone())?;
+    let sc = close_over(ty.clone().apply(&subst));
+    Ok((csts, subst, ty, sc))
+}
+
+fn close_over(ty: Type) -> Scheme {
+    normalize(generalize(Env::new(), ty))
+}
+
+fn normalize(sc: Scheme) -> Scheme {
+    let Scheme(_, body) = sc;
+    let hm = {
+        let mut vars = fv(body.clone());
+        vars.dedup();
+        let mut hm = HashMap::new();
+        let mut is = InferState::new();
+        for var in vars {
+            hm.insert(var, is.fresh_tv());
+        }
+        hm
+    };
+    let foralls = hm.values().map(|x| x.clone()).collect();
+    let ty = norm_type(&hm, body);
+    Scheme(foralls, ty)
+}
+
+fn norm_type(hm: &HashMap<TV, TV>, ty: Type) -> Type {
+    match ty {
+        Type::TArr(a, b) => {
+            let a_ = norm_type(hm, *a);
+            let b_ = norm_type(hm, *b);
+            Type::TArr(Box::new(a_), Box::new(b_))
+        }
+        Type::TCon(a) => Type::TCon(a),
+        Type::TVar(a) => match hm.get(&a) {
+            Some(x) => Type::TVar(x.clone()),
+            None => panic!("norm_type: impossible: type var not in signature"),
+        },
+    }
+}
+
+fn fv(ty: Type) -> Vec<TV> {
+    match ty {
+        Type::TVar(a) => vec![a],
+        Type::TArr(a, b) => {
+            let mut a_fv = fv(*a);
+            let mut b_fv = fv(*b);
+            a_fv.append(&mut b_fv);
+            a_fv
+        }
+        Type::TCon(_) => Vec::new(),
     }
 }
 
@@ -314,7 +391,7 @@ fn generalize(env: Env, ty: Type) -> Scheme {
     Scheme(free_vars.collect(), ty_)
 }
 
-pub fn infer_lit(lit: Lit) -> Type {
+fn infer_lit(lit: Lit) -> Type {
     match lit {
         Lit::LInt(_) => type_int(),
         Lit::LBool(_) => type_bool(),
