@@ -4,7 +4,7 @@ use std::{collections::HashMap, ops::Deref};
 use super::syntax::*;
 use super::types::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Env(HashMap<Name, Scheme>);
 
 impl Env {

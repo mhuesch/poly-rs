@@ -3,7 +3,7 @@ use std::iter::repeat_with;
 
 use super::{env::*, syntax::*, types::*};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Constraint(Type, Type);
 
 pub type Subst = HashMap<TV, Type>;
@@ -142,6 +142,7 @@ impl Env {
     }
 }
 
+#[derive(Debug)]
 pub enum TypeError {
     UnificationFail(Type, Type),
     InfiniteType(TV, Type),
