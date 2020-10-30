@@ -228,7 +228,7 @@ pub fn infer_top(mut env: Env, mut bindings: Vec<(Name, Expr)>) -> Result<Env, T
     Ok(env)
 }
 
-fn infer_expr(env: Env, expr: Expr) -> Result<Scheme, TypeError> {
+pub fn infer_expr(env: Env, expr: Expr) -> Result<Scheme, TypeError> {
     let mut is = InferState::new();
     let (ty, csts) = infer(env, &mut is, expr)?;
     let subst = run_solve(csts)?;

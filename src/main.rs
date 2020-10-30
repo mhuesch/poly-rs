@@ -2,12 +2,16 @@ use combine::parser::Parser;
 use combine::stream::easy;
 use rustyline::{error::ReadlineError, Editor};
 
-use poly::{env::*, infer::*, parse::expr};
+use poly::{env::*, infer::*, parse::expr, util::pretty::to_pretty};
 
 fn main() {
     println!("hello, poly & Rust!");
 
     let mut rl = Editor::<()>::new();
+    let (width, _height) = match rl.dimensions() {
+        None => panic!("output is not a tty"),
+        Some(dims) => dims,
+    };
     loop {
         let readline = rl.readline("> ");
         match readline {
@@ -18,13 +22,10 @@ fn main() {
                     Ok((e, _)) => {
                         println!("ast: {:?}\n", e);
                         let env = Env::new();
-                        match constraints_expr(env, e) {
+                        match infer_expr(env, e) {
                             Err(err) => println!("type error: {:?}", err),
-                            Ok((csts, subst, ty, sc)) => {
-                                println!("constraints: {:?}\n", csts);
-                                println!("subst: {:?}\n", subst);
-                                println!("type: {:?}\n", ty);
-                                println!("scheme: {:?}", sc);
+                            Ok(sc) => {
+                                println!("scheme: {}", to_pretty(sc.ppr(), width));
                             }
                         }
                     }
