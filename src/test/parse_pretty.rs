@@ -23,7 +23,7 @@ pub mod parse_unit {
     use combine::stream::easy;
 
     use crate::syntax::{Lit, *};
-    use crate::{parse::*, pretty::*};
+    use crate::{parse::*, util::pretty::*};
     use Expr::*;
 
     fn n() -> Name {
@@ -198,7 +198,7 @@ pub mod roundtrip {
     use combine::parser::Parser;
     use combine::stream::easy;
 
-    use crate::{parse::*, pretty::*, syntax::*};
+    use crate::{parse::*, syntax::*, util::pretty::*};
 
     #[quickcheck]
     fn parse_pretty_roundtrip(e: Expr) -> bool {
