@@ -55,7 +55,7 @@ where
 
     let fix = (res_str("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
-    let l_prefix = (char('l'), choice(( lam, let_ ))).map(|t| t.1);
+    let l_prefix = (char('l'), choice((lam, let_))).map(|t| t.1);
     let parenthesized = choice((l_prefix, if_, fix, app));
 
     choice((
@@ -146,7 +146,9 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    string(x).skip(not_followed_by(alpha_num())).skip(skip_spaces())
+    string(x)
+        .skip(not_followed_by(alpha_num()))
+        .skip(skip_spaces())
 }
 
 fn name<Input>() -> impl Parser<Input, Output = Name>
