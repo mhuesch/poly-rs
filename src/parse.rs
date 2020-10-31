@@ -1,6 +1,6 @@
-use combine::error::ParseError;
+use combine::error::{ParseError, StreamError};
 use combine::parser::char::{alpha_num, char, digit, letter, spaces, string};
-use combine::stream::Stream;
+use combine::stream::{Stream, StreamErrorFor};
 use combine::{attempt, between, choice, many1, not_followed_by, optional, parser, Parser};
 
 use super::syntax::*;
@@ -156,7 +156,19 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    word().map(Name)
+    let reserved: Vec<String> = ["let", "lam", "fix", "true", "false", "if"]
+        .iter()
+        .map(|x| x.to_string())
+        .collect();
+    word().and_then(move |s: String| {
+        if reserved.contains(&s) {
+            Err(StreamErrorFor::<Input>::unexpected_static_message(
+                "reserved keyword",
+            ))
+        } else {
+            Ok(Name(s))
+        }
+    })
 }
 
 fn var<Input>() -> impl Parser<Input, Output = Expr>
