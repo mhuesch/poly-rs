@@ -35,11 +35,11 @@ where
 
     let app = (expr(), expr()).map(|t| Expr::App(Box::new(t.0), Box::new(t.1)));
 
-    let lam = (res_str("am"), lex_char('['), name(), lex_char(']'), expr())
+    let lam = (res_str("lam"), lex_char('['), name(), lex_char(']'), expr())
         .map(|t| Expr::Lam(t.2, Box::new(t.4)));
 
     let let_ = (
-        res_str("et"),
+        res_str("let"),
         lex_char('('),
         lex_char('['),
         name(),
@@ -55,8 +55,7 @@ where
 
     let fix = (res_str("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
-    let l_prefix = (char('l'), choice((lam, let_))).map(|t| t.1);
-    let parenthesized = choice((l_prefix, if_, fix, app));
+    let parenthesized = choice((attempt(lam), attempt(let_), attempt(if_), attempt(fix), app));
 
     choice((
         attempt(lit),
@@ -151,17 +150,20 @@ where
         .skip(skip_spaces())
 }
 
+pub fn reserved() -> Vec<String> {
+    ["let", "lam", "fix", "true", "false", "if"]
+        .iter()
+        .map(|x| x.to_string())
+        .collect()
+}
+
 fn name<Input>() -> impl Parser<Input, Output = Name>
 where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    let reserved: Vec<String> = ["let", "lam", "fix", "true", "false", "if"]
-        .iter()
-        .map(|x| x.to_string())
-        .collect();
     word().and_then(move |s: String| {
-        if reserved.contains(&s) {
+        if reserved().contains(&s) {
             Err(StreamErrorFor::<Input>::unexpected_static_message(
                 "reserved keyword",
             ))
