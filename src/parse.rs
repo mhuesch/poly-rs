@@ -1,5 +1,5 @@
 use combine::error::ParseError;
-use combine::parser::char::{char, digit, letter, spaces, string};
+use combine::parser::char::{alpha_num, char, digit, letter, spaces, string};
 use combine::stream::Stream;
 use combine::{attempt, between, choice, many1, not_followed_by, optional, parser, Parser};
 
@@ -13,10 +13,9 @@ where
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
     let l_bool = choice((
-        str_("true").map(|_| Lit::LBool(true)),
-        (str_("false").map(|_| Lit::LBool(false))),
-    ))
-    .skip(not_followed_by(letter()));
+        res_str("true").map(|_| Lit::LBool(true)),
+        (res_str("false").map(|_| Lit::LBool(false))),
+    ));
     let l_int = (optional(char('-')), integer()).map(|t| {
         // TODO handle this error, even though it should be impossible
         let string: String = t.1;
@@ -28,19 +27,19 @@ where
     });
     let lit = choice((l_bool, l_int)).map(|v| Expr::Lit(v));
 
-    let p_add = str_("+").map(|_| PrimOp::Add);
-    let p_sub = str_("-").map(|_| PrimOp::Sub);
-    let p_mul = str_("*").map(|_| PrimOp::Mul);
-    let p_eql = str_("==").map(|_| PrimOp::Eql);
+    let p_add = res_str("+").map(|_| PrimOp::Add);
+    let p_sub = res_str("-").map(|_| PrimOp::Sub);
+    let p_mul = res_str("*").map(|_| PrimOp::Mul);
+    let p_eql = res_str("==").map(|_| PrimOp::Eql);
     let prim_op = choice((p_add, p_sub, p_mul, p_eql)).map(|v| Expr::Prim(v));
 
     let app = (expr(), expr()).map(|t| Expr::App(Box::new(t.0), Box::new(t.1)));
 
-    let lam = (str_("lam "), lex_char('['), name(), lex_char(']'), expr())
+    let lam = (res_str("am"), lex_char('['), name(), lex_char(']'), expr())
         .map(|t| Expr::Lam(t.2, Box::new(t.4)));
 
     let let_ = (
-        str_("let "),
+        res_str("et"),
         lex_char('('),
         lex_char('['),
         name(),
@@ -51,12 +50,13 @@ where
     )
         .map(|t| Expr::Let(t.3, Box::new(t.4), Box::new(t.7)));
 
-    let if_ = (str_("if "), expr(), expr(), expr())
+    let if_ = (res_str("if"), expr(), expr(), expr())
         .map(|t| Expr::If(Box::new(t.1), Box::new(t.2), Box::new(t.3)));
 
-    let fix = (str_("fix "), expr()).map(|t| Expr::Fix(Box::new(t.1)));
+    let fix = (res_str("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
-    let parenthesized = choice((attempt(lam), attempt(let_), attempt(if_), attempt(fix), app));
+    let l_prefix = (char('l'), choice(( lam, let_ ))).map(|t| t.1);
+    let parenthesized = choice((l_prefix, if_, fix, app));
 
     choice((
         attempt(lit),
@@ -88,7 +88,7 @@ where
     // Necessary due to rust-lang/rust#24159
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    let defn_ = (str_("defn "), name(), expr()).map(|t| Defn(t.1, t.2));
+    let defn_ = (res_str("defn"), name(), expr()).map(|t| Defn(t.1, t.2));
 
     between(lex_char('('), lex_char(')'), defn_).skip(skip_spaces())
 }
@@ -141,12 +141,12 @@ where
     many1(digit()).skip(skip_spaces())
 }
 
-fn str_<'a, Input>(x: &'static str) -> impl Parser<Input, Output = &'a str>
+fn res_str<'a, Input>(x: &'static str) -> impl Parser<Input, Output = &'a str>
 where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    string(x).skip(skip_spaces())
+    string(x).skip(not_followed_by(alpha_num())).skip(skip_spaces())
 }
 
 fn name<Input>() -> impl Parser<Input, Output = Name>
