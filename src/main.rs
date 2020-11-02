@@ -37,8 +37,9 @@ fn main() {
                             match infer_expr(env, &e) {
                                 Err(err) => println!("type error: {:?}", err),
                                 Ok(sc) => {
-                                    println!("scheme: {}", to_pretty(sc.ppr(), width));
-                                    println!("value: {}", to_pretty(eval(&e).ppr(), width));
+                                    let ty = to_pretty(sc.ppr(), width);
+                                    let val = to_pretty(eval(&e).ppr(), width);
+                                    println!("(: {}\n   {}\n)", val, ty);
                                 }
                             }
                         }
