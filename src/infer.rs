@@ -49,6 +49,10 @@ impl Type {
                 let t2_ = t2.apply(subst);
                 Type::TArr(Box::new(t1_), Box::new(t2_))
             }
+            Type::TLst(ty) => {
+                let ty_ = ty.apply(subst);
+                Type::TLst(Box::new(ty_))
+            }
         }
     }
 
@@ -67,6 +71,7 @@ impl Type {
                 // into `t1.ftv()`
                 t1.ftv().union(&hs2).map(|x| x.clone()).collect()
             }
+            Type::TLst(ty) => ty.ftv(),
         }
     }
 }
@@ -192,6 +197,18 @@ fn infer(env: Env, is: &mut InferState, expr: &Expr) -> Result<(Type, Vec<Constr
             csts_e.append(&mut csts_bd);
             Ok((t_bd, csts_e))
         }
+        Expr::List(xs) => {
+            let tv_elem = is.fresh();
+            let mut csts = Vec::new();
+            for x in xs {
+                let (t_x, mut csts_x) = infer(env.clone(), is, x)?;
+                csts.append(&mut csts_x);
+                csts.push(Constraint(t_x, tv_elem.clone()));
+            }
+            let tv_list = is.fresh();
+            csts.push(Constraint(tv_list.clone(), Type::TLst(Box::new(tv_elem))));
+            Ok((tv_list, csts))
+        }
         Expr::Fix(bd) => {
             let (t_bd, mut csts_bd) = infer(env.clone(), is, bd)?;
             let tv = is.fresh();
@@ -280,6 +297,10 @@ fn norm_type(hm: &HashMap<TV, TV>, ty: Type) -> Type {
             Some(x) => Type::TVar(x.clone()),
             None => panic!("norm_type: impossible: type var not in signature"),
         },
+        Type::TLst(a) => {
+            let a_ = norm_type(hm, *a);
+            Type::TLst(Box::new(a_))
+        }
     }
 }
 
@@ -288,6 +309,7 @@ fn free_type_vars(ty: Type) -> Box<dyn Iterator<Item = TV>> {
         Type::TVar(a) => Box::new(iter::once(a)),
         Type::TArr(a, b) => Box::new(free_type_vars(*a).chain(free_type_vars(*b))),
         Type::TCon(_) => Box::new(iter::empty()),
+        Type::TLst(a) => free_type_vars(*a),
     }
 }
 

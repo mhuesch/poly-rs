@@ -1,7 +1,7 @@
 use combine::error::{ParseError, StreamError};
 use combine::parser::char::{alpha_num, char, digit, letter, spaces, string};
 use combine::stream::{Stream, StreamErrorFor};
-use combine::{attempt, between, choice, many1, not_followed_by, optional, parser, Parser};
+use combine::{attempt, between, choice, many, many1, not_followed_by, optional, parser, Parser};
 
 use super::syntax::*;
 
@@ -65,12 +65,21 @@ where
             })
     };
 
+    let list = (res_str("list"), many::<Vec<_>, _, _>(expr())).map(|t| Expr::List(t.1));
+
     let if_ = (res_str("if"), expr(), expr(), expr())
         .map(|t| Expr::If(Box::new(t.1), Box::new(t.2), Box::new(t.3)));
 
     let fix = (res_str("fix"), expr()).map(|t| Expr::Fix(Box::new(t.1)));
 
-    let parenthesized = choice((attempt(lam), attempt(let_), attempt(if_), attempt(fix), app));
+    let parenthesized = choice((
+        attempt(lam),
+        attempt(let_),
+        attempt(list),
+        attempt(if_),
+        attempt(fix),
+        app,
+    ));
 
     choice((
         attempt(lit),
