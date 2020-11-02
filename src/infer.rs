@@ -49,9 +49,9 @@ impl Type {
                 let t2_ = t2.apply(subst);
                 Type::TArr(Box::new(t1_), Box::new(t2_))
             }
-            Type::TLst(ty) => {
+            Type::TList(ty) => {
                 let ty_ = ty.apply(subst);
-                Type::TLst(Box::new(ty_))
+                Type::TList(Box::new(ty_))
             }
         }
     }
@@ -71,7 +71,7 @@ impl Type {
                 // into `t1.ftv()`
                 t1.ftv().union(&hs2).map(|x| x.clone()).collect()
             }
-            Type::TLst(ty) => ty.ftv(),
+            Type::TList(ty) => ty.ftv(),
         }
     }
 }
@@ -206,7 +206,7 @@ fn infer(env: Env, is: &mut InferState, expr: &Expr) -> Result<(Type, Vec<Constr
                 csts.push(Constraint(t_x, tv_elem.clone()));
             }
             let tv_list = is.fresh();
-            csts.push(Constraint(tv_list.clone(), Type::TLst(Box::new(tv_elem))));
+            csts.push(Constraint(tv_list.clone(), Type::TList(Box::new(tv_elem))));
             Ok((tv_list, csts))
         }
         Expr::Fix(bd) => {
@@ -297,9 +297,9 @@ fn norm_type(hm: &HashMap<TV, TV>, ty: Type) -> Type {
             Some(x) => Type::TVar(x.clone()),
             None => panic!("norm_type: impossible: type var not in signature"),
         },
-        Type::TLst(a) => {
+        Type::TList(a) => {
             let a_ = norm_type(hm, *a);
-            Type::TLst(Box::new(a_))
+            Type::TList(Box::new(a_))
         }
     }
 }
@@ -309,7 +309,7 @@ fn free_type_vars(ty: Type) -> Box<dyn Iterator<Item = TV>> {
         Type::TVar(a) => Box::new(iter::once(a)),
         Type::TArr(a, b) => Box::new(free_type_vars(*a).chain(free_type_vars(*b))),
         Type::TCon(_) => Box::new(iter::empty()),
-        Type::TLst(a) => free_type_vars(*a),
+        Type::TList(a) => free_type_vars(*a),
     }
 }
 
@@ -335,7 +335,7 @@ fn unifies(t1: Type, t2: Type) -> Result<Subst, TypeError> {
         (Type::TVar(v), t) => bind(v, t),
         (t, Type::TVar(v)) => bind(v, t),
         (Type::TArr(t1, t2), Type::TArr(t3, t4)) => unify_many(vec![*t1, *t2], vec![*t3, *t4]),
-        (Type::TLst(t1), Type::TLst(t2)) => unifies(*t1, *t2),
+        (Type::TList(t1), Type::TList(t2)) => unifies(*t1, *t2),
         (a, b) => Err(TypeError::UnificationFail(a, b)),
     }
 }
