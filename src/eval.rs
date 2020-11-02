@@ -51,7 +51,8 @@ pub fn eval(expr: &Expr) -> Value {
 
 use Value::*;
 fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
-    match find_prim_app(&expr) {
+    match find_prim_app(&expr, false) {
+        // in this case we directly interpret the PrimOp.
         Some((op, args)) => {
             let args_v: Vec<Value> = args
                 .iter()
@@ -77,6 +78,7 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
             }
         }
 
+        // we do not find a direct PrimOp application, so we interpret normally.
         None => match expr {
             Expr::Lit(Lit::LInt(x)) => VInt(*x),
             Expr::Lit(Lit::LBool(x)) => VBool(*x),
@@ -101,6 +103,12 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
                 _ => panic!("impossible: non-bool in test position of if"),
             },
 
+            // this represents a PrimOp that is not in application position.
+            // since it is then being used as an argument (or being bound), we
+            // must package it into a closure so it can be used "lifted".
+            //
+            // note that we assume these are arity-2 PrimOps - an assumption
+            // which likely will not hold in the future.
             Expr::Prim(op) => {
                 let nm1 = es.fresh();
                 let nm2 = es.fresh();
@@ -109,7 +117,7 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
                     Expr::Var(nm2.clone())
                 );
                 let inner = lam!(nm2, bd);
-                VClosure(nm1, Box::new(inner), env.clone())
+                VClosure(nm1, Box::new(inner), HashMap::new())
             }
 
             Expr::App(fun, arg) => match eval_(env, es, fun) {
@@ -131,14 +139,21 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
     }
 }
 
-fn find_prim_app(expr: &Expr) -> Option<(PrimOp, Vec<Expr>)> {
+/// look for a "direct application" of a PrimOp. this means that it is nested
+/// within some number of `App`s, with no intervening other constructors. we
+/// want to find this because we can directly interpret these, rather than
+/// packaging them into closures.
+///
+/// we must take the `in_app` boolean so that we can differentiate "bare"
+/// PrimOps, which are not inside an `App`, from enclosed ones.
+fn find_prim_app(expr: &Expr, in_app: bool) -> Option<(PrimOp, Vec<Expr>)> {
     match expr {
         Expr::App(fun, arg) => {
-            let (op, mut args) = find_prim_app(fun)?;
+            let (op, mut args) = find_prim_app(fun, true)?;
             args.push(*arg.clone());
             Some((op, args))
         }
-        Expr::Prim(op) => Some((op.clone(), Vec::new())),
+        Expr::Prim(op) if in_app => Some((op.clone(), Vec::new())),
         _ => None,
     }
 }
