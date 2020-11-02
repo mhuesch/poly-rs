@@ -53,6 +53,11 @@ impl Type {
                 let ty_ = ty.apply(subst);
                 Type::TList(Box::new(ty_))
             }
+            Type::TPair(t1, t2) => {
+                let t1_ = t1.apply(subst);
+                let t2_ = t2.apply(subst);
+                Type::TPair(Box::new(t1_), Box::new(t2_))
+            }
         }
     }
 
@@ -72,6 +77,10 @@ impl Type {
                 t1.ftv().union(&hs2).map(|x| x.clone()).collect()
             }
             Type::TList(ty) => ty.ftv(),
+            Type::TPair(t1, t2) => {
+                let hs2 = t2.ftv();
+                t1.ftv().union(&hs2).map(|x| x.clone()).collect()
+            }
         }
     }
 }
@@ -301,6 +310,11 @@ fn norm_type(hm: &HashMap<TV, TV>, ty: Type) -> Type {
             let a_ = norm_type(hm, *a);
             Type::TList(Box::new(a_))
         }
+        Type::TPair(a, b) => {
+            let a_ = norm_type(hm, *a);
+            let b_ = norm_type(hm, *b);
+            Type::TPair(Box::new(a_), Box::new(b_))
+        }
     }
 }
 
@@ -310,6 +324,7 @@ fn free_type_vars(ty: Type) -> Box<dyn Iterator<Item = TV>> {
         Type::TArr(a, b) => Box::new(free_type_vars(*a).chain(free_type_vars(*b))),
         Type::TCon(_) => Box::new(iter::empty()),
         Type::TList(a) => free_type_vars(*a),
+        Type::TPair(a, b) => Box::new(free_type_vars(*a).chain(free_type_vars(*b))),
     }
 }
 
