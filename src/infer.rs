@@ -351,6 +351,7 @@ fn unifies(t1: Type, t2: Type) -> Result<Subst, TypeError> {
         (t, Type::TVar(v)) => bind(v, t),
         (Type::TArr(t1, t2), Type::TArr(t3, t4)) => unify_many(vec![*t1, *t2], vec![*t3, *t4]),
         (Type::TList(t1), Type::TList(t2)) => unifies(*t1, *t2),
+        (Type::TPair(t1, t2), Type::TPair(t3, t4)) => unify_many(vec![*t1, *t2], vec![*t3, *t4]),
         (a, b) => Err(TypeError::UnificationFail(a, b)),
     }
 }
@@ -462,6 +463,21 @@ fn infer_primop(is: &mut InferState, op: &PrimOp) -> Type {
             let t_f = type_arr_multi(vec![b.clone(), a.clone()], b.clone());
             let t_ls = type_list(a.clone());
             type_arr_multi(vec![t_f, b.clone(), t_ls], b)
+        }
+        PrimOp::Pair => {
+            let a = is.fresh();
+            let b = is.fresh();
+            type_arr_multi(vec![a.clone(), b.clone()], type_pair(a, b))
+        }
+        PrimOp::Fst => {
+            let a = is.fresh();
+            let b = is.fresh();
+            type_arr(type_pair(a.clone(), b), a)
+        }
+        PrimOp::Snd => {
+            let a = is.fresh();
+            let b = is.fresh();
+            type_arr(type_pair(a, b.clone()), b)
         }
     }
 }
