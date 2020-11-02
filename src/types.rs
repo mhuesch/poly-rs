@@ -11,7 +11,7 @@ pub enum Type {
     TVar(TV),
     TCon(String),
     TArr(Box<Type>, Box<Type>),
-    TLst(Box<Type>),
+    TList(Box<Type>),
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -28,7 +28,7 @@ pub fn type_bool() -> Type {
 }
 
 pub fn type_list(ty: Type) -> Type {
-    Type::TLst(Box::new(ty))
+    Type::TList(Box::new(ty))
 }
 
 pub fn type_arr(t1: Type, t2: Type) -> Type {
@@ -73,7 +73,7 @@ impl Type {
             Type::TVar(tv) => tv.ppr(),
             Type::TCon(s) => RcDoc::text(s),
             Type::TArr(a, b) => parens(a.ppr().append(RcDoc::text(" -> ")).append(b.ppr())),
-            Type::TLst(x) => parens(RcDoc::text("List ").append(x.ppr())),
+            Type::TList(x) => parens(RcDoc::text("List ").append(x.ppr())),
         }
     }
 }
