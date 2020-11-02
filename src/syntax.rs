@@ -46,6 +46,8 @@ pub enum PrimOp {
     Pair,
     Fst,
     Snd,
+    Cons,
+    Nil,
 }
 
 pub struct Defn(pub Name, pub Expr);

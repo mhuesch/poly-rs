@@ -137,6 +137,16 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
                     VPair(_, b) => *b.clone(),
                     _ => panic!("snd: bad types"),
                 },
+                PrimOp::Cons => match &args_v[1] {
+                    VList(vec) => VList(
+                        iter::once(&args_v[0])
+                            .chain(vec.into_iter())
+                            .map(|x| x.clone())
+                            .collect(),
+                    ),
+                    _ => panic!("cons: bad types"),
+                },
+                PrimOp::Nil => VList(Vec::new()),
             }
         }
 

@@ -479,6 +479,12 @@ fn infer_primop(is: &mut InferState, op: &PrimOp) -> Type {
             let b = is.fresh();
             type_arr(type_pair(a, b.clone()), b)
         }
+        PrimOp::Cons => {
+            let a = is.fresh();
+            let ls = type_list(a.clone());
+            type_arr_multi(vec![a, ls.clone()], ls.clone())
+        }
+        PrimOp::Nil => type_list(is.fresh()),
     }
 }
 

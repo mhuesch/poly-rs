@@ -133,7 +133,7 @@ impl Arbitrary for Name {
 
 impl Arbitrary for PrimOp {
     fn arbitrary<G: Gen>(g: &mut G) -> PrimOp {
-        match g.gen_range(0, 10) {
+        match g.gen_range(0, 11) {
             0 => PrimOp::Add,
             1 => PrimOp::Sub,
             2 => PrimOp::Mul,
@@ -144,6 +144,7 @@ impl Arbitrary for PrimOp {
             7 => PrimOp::Pair,
             8 => PrimOp::Fst,
             9 => PrimOp::Snd,
+            10 => PrimOp::Cons,
             _ => panic!("impossible: Arbitrary: PrimOp: gen out of bounds"),
         }
     }
