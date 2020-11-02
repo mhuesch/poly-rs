@@ -29,6 +29,9 @@ pub enum PrimOp {
     Null,
     Map,
     Foldl,
+    Pair,
+    Fst,
+    Snd,
 }
 
 pub struct Defn(pub Name, pub Expr);

@@ -73,6 +73,9 @@ impl PrimOp {
             Null => RcDoc::text("null"),
             Map => RcDoc::text("map"),
             Foldl => RcDoc::text("foldl"),
+            Pair => RcDoc::text("pair"),
+            Fst => RcDoc::text("fst"),
+            Snd => RcDoc::text("snd"),
         }
     }
 }
