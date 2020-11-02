@@ -151,7 +151,7 @@ pub enum TypeError {
     UnificationMismatch(Vec<Type>, Vec<Type>),
 }
 
-fn infer(env: Env, is: &mut InferState, expr: Expr) -> Result<(Type, Vec<Constraint>), TypeError> {
+fn infer(env: Env, is: &mut InferState, expr: &Expr) -> Result<(Type, Vec<Constraint>), TypeError> {
     match expr {
         Expr::Lit(lit) => Ok((infer_lit(lit), Vec::new())),
         Expr::Var(nm) => {
@@ -166,13 +166,13 @@ fn infer(env: Env, is: &mut InferState, expr: Expr) -> Result<(Type, Vec<Constra
                 le.replace(nm, sc);
                 le
             };
-            let (typ, csts) = infer(local_env, is, *bd)?;
+            let (typ, csts) = infer(local_env, is, bd)?;
             let ret = Type::TArr(Box::new(tv), Box::new(typ));
             Ok((ret, csts))
         }
         Expr::App(e1, e2) => {
-            let (t1, mut csts1) = infer(env.clone(), is, *e1)?;
-            let (t2, mut csts2) = infer(env, is, *e2)?;
+            let (t1, mut csts1) = infer(env.clone(), is, e1)?;
+            let (t2, mut csts2) = infer(env, is, e2)?;
             let tv = is.fresh();
             let cst = Constraint(t1, Type::TArr(Box::new(t2), Box::new(tv.clone())));
             csts1.append(&mut csts2);
@@ -180,7 +180,7 @@ fn infer(env: Env, is: &mut InferState, expr: Expr) -> Result<(Type, Vec<Constra
             Ok((tv, csts1))
         }
         Expr::Let(nm, e, bd) => {
-            let (t_e, mut csts_e) = infer(env.clone(), is, *e)?;
+            let (t_e, mut csts_e) = infer(env.clone(), is, e)?;
             let subst = run_solve(csts_e.to_vec())?;
             let sc = generalize(env.clone().apply(&subst), t_e.apply(&subst));
             let local_env = {
@@ -188,12 +188,12 @@ fn infer(env: Env, is: &mut InferState, expr: Expr) -> Result<(Type, Vec<Constra
                 le.replace(nm, sc);
                 le.apply(&subst)
             };
-            let (t_bd, mut csts_bd) = infer(local_env, is, *bd)?;
+            let (t_bd, mut csts_bd) = infer(local_env, is, bd)?;
             csts_e.append(&mut csts_bd);
             Ok((t_bd, csts_e))
         }
         Expr::Fix(bd) => {
-            let (t_bd, mut csts_bd) = infer(env.clone(), is, *bd)?;
+            let (t_bd, mut csts_bd) = infer(env.clone(), is, bd)?;
             let tv = is.fresh();
             let cst = Constraint(t_bd, Type::TArr(Box::new(tv.clone()), Box::new(tv.clone())));
             csts_bd.push(cst);
@@ -206,9 +206,9 @@ fn infer(env: Env, is: &mut InferState, expr: Expr) -> Result<(Type, Vec<Constra
             Ok((infer_primop(op), Vec::new()))
         }
         Expr::If(tst, thn, els) => {
-            let (t_tst, mut csts_tst) = infer(env.clone(), is, *tst)?;
-            let (t_thn, mut csts_thn) = infer(env.clone(), is, *thn)?;
-            let (t_els, mut csts_els) = infer(env, is, *els)?;
+            let (t_tst, mut csts_tst) = infer(env.clone(), is, tst)?;
+            let (t_thn, mut csts_thn) = infer(env.clone(), is, thn)?;
+            let (t_els, mut csts_els) = infer(env, is, els)?;
             let cst_1 = Constraint(t_tst, type_bool());
             let cst_2 = Constraint(t_thn.clone(), t_els);
             csts_tst.append(&mut csts_thn);
@@ -222,13 +222,13 @@ fn infer(env: Env, is: &mut InferState, expr: Expr) -> Result<(Type, Vec<Constra
 
 pub fn infer_top(mut env: Env, mut bindings: Vec<(Name, Expr)>) -> Result<Env, TypeError> {
     while let Some((name, expr)) = bindings.pop() {
-        let sc = infer_expr(env.clone(), expr)?;
+        let sc = infer_expr(env.clone(), &expr)?;
         env.extend(name, sc);
     }
     Ok(env)
 }
 
-pub fn infer_expr(env: Env, expr: Expr) -> Result<Scheme, TypeError> {
+pub fn infer_expr(env: Env, expr: &Expr) -> Result<Scheme, TypeError> {
     let mut is = InferState::new();
     let (ty, csts) = infer(env, &mut is, expr)?;
     let subst = run_solve(csts)?;
@@ -238,7 +238,7 @@ pub fn infer_expr(env: Env, expr: Expr) -> Result<Scheme, TypeError> {
 /// Return extra internal information, as compared to `infer_expr`.
 pub fn constraints_expr(
     env: Env,
-    expr: Expr,
+    expr: &Expr,
 ) -> Result<(Vec<Constraint>, Subst, Type, Scheme), TypeError> {
     let mut is = InferState::new();
     let (ty, csts) = infer(env, &mut is, expr)?;
@@ -393,14 +393,14 @@ fn generalize(env: Env, ty: Type) -> Scheme {
     Scheme(free_vars.collect(), ty_)
 }
 
-fn infer_lit(lit: Lit) -> Type {
+fn infer_lit(lit: &Lit) -> Type {
     match lit {
         Lit::LInt(_) => type_int(),
         Lit::LBool(_) => type_bool(),
     }
 }
 
-fn infer_primop(op: PrimOp) -> Type {
+fn infer_primop(op: &PrimOp) -> Type {
     match op {
         PrimOp::Add => binop_arr(type_int(), type_int()),
         PrimOp::Mul => binop_arr(type_int(), type_int()),

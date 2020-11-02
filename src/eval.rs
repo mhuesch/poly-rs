@@ -43,17 +43,17 @@ impl EvalState {
     }
 }
 
-pub fn eval(expr: Expr) -> Value {
+pub fn eval(expr: &Expr) -> Value {
     let env = HashMap::new();
     let mut es = EvalState::new();
     eval_(&env, &mut es, expr)
 }
 
 use Value::*;
-fn eval_(env: &TermEnv, es: &mut EvalState, expr: Expr) -> Value {
+fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
     match find_prim_app(&expr) {
         Some((op, args)) => {
-            let args_v: Vec<Value> = args.iter().map(|arg| eval_(env, es, arg.clone())).collect();
+            let args_v: Vec<Value> = args.iter().map(|arg| eval_(env, es, &arg.clone())).collect();
             match op {
                 PrimOp::Add => match (&args_v[0], &args_v[1]) {
                     (VInt(a_), VInt(b_)) => VInt(a_ + b_),
@@ -75,26 +75,26 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: Expr) -> Value {
         }
 
         None => match expr {
-            Expr::Lit(Lit::LInt(x)) => VInt(x),
-            Expr::Lit(Lit::LBool(x)) => VBool(x),
+            Expr::Lit(Lit::LInt(x)) => VInt(*x),
+            Expr::Lit(Lit::LBool(x)) => VBool(*x),
 
             Expr::Var(x) => match env.get(&x) {
                 None => panic!("impossible: free variable: {:?}", x),
                 Some(v) => v.clone(),
             },
 
-            Expr::Lam(nm, bd) => VClosure(nm, bd, env.clone()),
+            Expr::Lam(nm, bd) => VClosure(nm.clone(), bd.clone(), env.clone()),
 
             Expr::Let(x, e, bd) => {
-                let e_v = eval_(env, es, *e);
+                let e_v = eval_(env, es, e);
                 let mut new_env = env.clone();
-                new_env.insert(x, e_v);
-                eval_(&new_env, es, *bd)
+                new_env.insert(x.clone(), e_v);
+                eval_(&new_env, es, bd)
             }
 
-            Expr::If(tst, thn, els) => match eval_(env, es, *tst) {
-                VBool(true) => eval_(env, es, *thn),
-                VBool(false) => eval_(env, es, *els),
+            Expr::If(tst, thn, els) => match eval_(env, es, tst) {
+                VBool(true) => eval_(env, es, thn),
+                VBool(false) => eval_(env, es, els),
                 _ => panic!("impossible: non-bool in test position of if"),
             },
 
@@ -102,24 +102,24 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: Expr) -> Value {
                 let nm1 = es.fresh();
                 let nm2 = es.fresh();
                 let bd = app!(
-                    app!(Expr::Prim(op), Expr::Var(nm1.clone())),
+                    app!(Expr::Prim(op.clone()), Expr::Var(nm1.clone())),
                     Expr::Var(nm2.clone())
                 );
                 let inner = lam!(nm2, bd);
                 VClosure(nm1, Box::new(inner), env.clone())
             }
 
-            Expr::App(fun, arg) => match eval_(env, es, *fun) {
+            Expr::App(fun, arg) => match eval_(env, es, fun) {
                 VClosure(nm, bd, clo) => {
-                    let arg_v = eval_(env, es, *arg);
+                    let arg_v = eval_(env, es, arg);
                     let mut new_env = clo.clone();
                     new_env.insert(nm, arg_v);
-                    eval_(&new_env, es, *bd)
+                    eval_(&new_env, es, &bd)
                 }
                 _ => panic!("impossible: non-closure in function position of app"),
             },
 
-            Expr::Fix(e) => eval_(env, es, Expr::App(e.clone(), Box::new(Expr::Fix(e)))),
+            Expr::Fix(e) => eval_(env, es, &Expr::App(e.clone(), Box::new(Expr::Fix(e.clone())))),
         },
     }
 }

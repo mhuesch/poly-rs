@@ -34,11 +34,11 @@ fn main() {
                         } else {
                             println!("ast: {:?}\n", e);
                             let env = Env::new();
-                            match infer_expr(env, e) {
+                            match infer_expr(env, &e) {
                                 Err(err) => println!("type error: {:?}", err),
                                 Ok(sc) => {
                                     println!("scheme: {}", to_pretty(sc.ppr(), width));
-                                    println!("value: {}", to_pretty(eval(e).ppr(), width));
+                                    println!("value: {}", to_pretty(eval(&e).ppr(), width));
                                 }
                             }
                         }
