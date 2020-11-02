@@ -11,6 +11,7 @@ pub enum Type {
     TVar(TV),
     TCon(String),
     TArr(Box<Type>, Box<Type>),
+    TLst(Box<Type>),
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -59,6 +60,7 @@ impl Type {
             Type::TVar(tv) => tv.ppr(),
             Type::TCon(s) => RcDoc::text(s),
             Type::TArr(a, b) => parens(a.ppr().append(RcDoc::text(" -> ")).append(b.ppr())),
+            Type::TLst(x) => parens(RcDoc::text("List ").append(x.ppr())),
         }
     }
 }

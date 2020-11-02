@@ -7,6 +7,7 @@ pub enum Expr {
     App(Box<Expr>, Box<Expr>),
     Lam(Name, Box<Expr>),
     Let(Name, Box<Expr>, Box<Expr>),
+    List(Vec<Expr>),
     Lit(Lit),
     If(Box<Expr>, Box<Expr>, Box<Expr>),
     Fix(Box<Expr>),

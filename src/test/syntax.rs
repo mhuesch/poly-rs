@@ -38,6 +38,7 @@ impl Arbitrary for Expr {
                 let bds = single_shrinker(*bd.clone()).chain(bd.shrink().map(|v| *v));
                 Box::new(pairs.chain(es).chain(bds))
             }
+            Expr::List(xs) => Box::new(xs.shrink().map(|v| Expr::List(v))),
             Expr::If(tst, thn, els) => {
                 let pairs = (tst.clone(), thn.clone(), els.clone())
                     .shrink()
@@ -52,7 +53,7 @@ impl Arbitrary for Expr {
                 let bds = single_shrinker(*bd.clone()).chain(bd.shrink().map(|v| *v));
                 Box::new(chain.chain(bds))
             }
-            _ => empty_shrinker(),
+            Expr::Var(_) | Expr::Lit(_) | Expr::Prim(_) => empty_shrinker(),
         }
     }
 }
@@ -67,7 +68,7 @@ impl Arbitrary for Expr {
 // by passing an explicit size parameter, we can implement this directly - dividing the size
 // parameter as we recur, and terminating when it hits a bound.
 fn gen_expr<G: Gen>(g: &mut G, size: usize) -> Expr {
-    let upper_bound = if size < 1 { 3 } else { 8 };
+    let upper_bound = if size < 1 { 3 } else { 9 };
     match g.gen_range(0, upper_bound) {
         0 => Expr::Var(Name::arbitrary(g)),
         1 => Expr::Lit(Lit::arbitrary(g)),
@@ -97,6 +98,11 @@ fn gen_expr<G: Gen>(g: &mut G, size: usize) -> Expr {
         7 => {
             let bd = gen_expr(g, size * 5 / 6);
             Expr::Fix(Box::new(bd))
+        }
+        8 => {
+            let len = g.gen_range(1, 10);
+            let xs = iter::repeat(gen_expr(g, size / len)).take(len).collect();
+            Expr::List(xs)
         }
         _ => panic!("impossible: gen_expr: gen out of bounds"),
     }
