@@ -2,7 +2,7 @@ use combine::parser::Parser;
 use combine::stream::easy;
 use rustyline::{error::ReadlineError, Editor};
 
-use poly::{env::*, infer::*, parse::expr, util::pretty::to_pretty};
+use poly::{env::*, eval::eval, infer::*, parse::expr, util::pretty::to_pretty};
 
 const BANNER: &'static str = r#"
                  __
@@ -38,6 +38,7 @@ fn main() {
                                 Err(err) => println!("type error: {:?}", err),
                                 Ok(sc) => {
                                     println!("scheme: {}", to_pretty(sc.ppr(), width));
+                                    println!("value: {}", to_pretty(eval(e).ppr(), width));
                                 }
                             }
                         }

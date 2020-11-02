@@ -13,6 +13,20 @@ pub enum Expr {
     Prim(PrimOp),
 }
 
+#[macro_export]
+macro_rules! app {
+    ( $a: expr, $b: expr ) => {
+        Expr::App(Box::new($a), Box::new($b))
+    };
+}
+
+#[macro_export]
+macro_rules! lam {
+    ( $a: expr, $b: expr ) => {
+        Expr::Lam($a, Box::new($b))
+    };
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Lit {
     LInt(i64),
