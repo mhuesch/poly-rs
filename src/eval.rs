@@ -146,7 +146,6 @@ fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
                     ),
                     _ => panic!("cons: bad types"),
                 },
-                PrimOp::Nil => VList(Vec::new()),
             }
         }
 

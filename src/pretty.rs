@@ -77,7 +77,6 @@ impl PrimOp {
             Fst => RcDoc::text("fst"),
             Snd => RcDoc::text("snd"),
             Cons => RcDoc::text("cons"),
-            Nil => RcDoc::text("nil"),
         }
     }
 }
