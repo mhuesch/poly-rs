@@ -70,6 +70,9 @@ impl PrimOp {
             Sub => RcDoc::text("-"),
             Mul => RcDoc::text("*"),
             Eql => RcDoc::text("=="),
+            Null => RcDoc::text("null"),
+            Map => RcDoc::text("map"),
+            Foldl => RcDoc::text("foldl"),
         }
     }
 }
