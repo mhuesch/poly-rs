@@ -12,6 +12,7 @@ pub enum Type {
     TCon(String),
     TArr(Box<Type>, Box<Type>),
     TList(Box<Type>),
+    TPair(Box<Type>, Box<Type>),
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -33,6 +34,10 @@ pub fn type_list(ty: Type) -> Type {
 
 pub fn type_arr(t1: Type, t2: Type) -> Type {
     Type::TArr(Box::new(t1), Box::new(t2))
+}
+
+pub fn type_pair(t1: Type, t2: Type) -> Type {
+    Type::TPair(Box::new(t1), Box::new(t2))
 }
 
 pub fn type_arr_multi(args: Vec<Type>, ret: Type) -> Type {
@@ -74,6 +79,7 @@ impl Type {
             Type::TCon(s) => RcDoc::text(s),
             Type::TArr(a, b) => parens(a.ppr().append(RcDoc::text(" -> ")).append(b.ppr())),
             Type::TList(x) => parens(RcDoc::text("List ").append(x.ppr())),
+            Type::TPair(a, b) => parens(a.ppr().append(RcDoc::text(",")).append(b.ppr())),
         }
     }
 }
