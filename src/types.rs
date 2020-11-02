@@ -79,7 +79,7 @@ impl Type {
             Type::TCon(s) => RcDoc::text(s),
             Type::TArr(a, b) => parens(a.ppr().append(RcDoc::text(" -> ")).append(b.ppr())),
             Type::TList(x) => parens(RcDoc::text("List ").append(x.ppr())),
-            Type::TPair(a, b) => parens(a.ppr().append(RcDoc::text(",")).append(b.ppr())),
+            Type::TPair(a, b) => parens(a.ppr().append(RcDoc::text(", ")).append(b.ppr())),
         }
     }
 }
