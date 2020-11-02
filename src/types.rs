@@ -27,6 +27,19 @@ pub fn type_bool() -> Type {
     Type::TCon("Bool".to_string())
 }
 
+pub fn type_list(ty: Type) -> Type {
+    Type::TLst(Box::new(ty))
+}
+
+pub fn type_arr(t1: Type, t2: Type) -> Type {
+    Type::TArr(Box::new(t1), Box::new(t2))
+}
+
+pub fn type_arr_multi(args: Vec<Type>, ret: Type) -> Type {
+    let applicator = |bd, arg: Type| Type::TArr(Box::new(arg), Box::new(bd));
+    args.into_iter().rev().fold(ret, applicator)
+}
+
 impl Scheme {
     pub fn ppr(&self) -> RcDoc<()> {
         match self {

@@ -220,7 +220,7 @@ fn infer(env: Env, is: &mut InferState, expr: &Expr) -> Result<(Type, Vec<Constr
             // TODO figure out if this is borked. `poly` takes the approach of
             // wrapping primop application, whereas I allow primops to be first
             // class functions.
-            Ok((infer_primop(op), Vec::new()))
+            Ok((infer_primop(is, op), Vec::new()))
         }
         Expr::If(tst, thn, els) => {
             let (t_tst, mut csts_tst) = infer(env.clone(), is, tst)?;
@@ -335,6 +335,7 @@ fn unifies(t1: Type, t2: Type) -> Result<Subst, TypeError> {
         (Type::TVar(v), t) => bind(v, t),
         (t, Type::TVar(v)) => bind(v, t),
         (Type::TArr(t1, t2), Type::TArr(t3, t4)) => unify_many(vec![*t1, *t2], vec![*t3, *t4]),
+        (Type::TLst(t1), Type::TLst(t2)) => unifies(*t1, *t2),
         (a, b) => Err(TypeError::UnificationFail(a, b)),
     }
 }
@@ -422,12 +423,31 @@ fn infer_lit(lit: &Lit) -> Type {
     }
 }
 
-fn infer_primop(op: &PrimOp) -> Type {
+fn infer_primop(is: &mut InferState, op: &PrimOp) -> Type {
     match op {
         PrimOp::Add => binop_arr(type_int(), type_int()),
         PrimOp::Mul => binop_arr(type_int(), type_int()),
         PrimOp::Sub => binop_arr(type_int(), type_int()),
         PrimOp::Eql => binop_arr(type_int(), type_bool()),
+        PrimOp::Null => {
+            let tv = is.fresh();
+            type_arr(type_list(tv), type_bool())
+        }
+        PrimOp::Map => {
+            let a = is.fresh();
+            let b = is.fresh();
+            let t_f = type_arr(a.clone(), b.clone());
+            let t_ls = type_list(a);
+            let t_ret = type_list(b);
+            type_arr_multi(vec![t_f, t_ls], t_ret)
+        }
+        PrimOp::Foldl => {
+            let a = is.fresh();
+            let b = is.fresh();
+            let t_f = type_arr_multi(vec![b.clone(), a.clone()], b.clone());
+            let t_ls = type_list(a.clone());
+            type_arr_multi(vec![t_f, b.clone(), t_ls], b)
+        }
     }
 }
 

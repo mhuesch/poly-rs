@@ -27,11 +27,16 @@ where
     });
     let lit = choice((l_bool, l_int)).map(|v| Expr::Lit(v));
 
-    let p_add = res_str("+").map(|_| PrimOp::Add);
-    let p_sub = res_str("-").map(|_| PrimOp::Sub);
-    let p_mul = res_str("*").map(|_| PrimOp::Mul);
-    let p_eql = res_str("==").map(|_| PrimOp::Eql);
-    let prim_op = choice((p_add, p_sub, p_mul, p_eql)).map(|v| Expr::Prim(v));
+    let prim_op = choice((
+        res_str("+").map(|_| PrimOp::Add),
+        res_str("-").map(|_| PrimOp::Sub),
+        res_str("*").map(|_| PrimOp::Mul),
+        res_str("==").map(|_| PrimOp::Eql),
+        res_str("null").map(|_| PrimOp::Null),
+        res_str("map").map(|_| PrimOp::Map),
+        res_str("foldl").map(|_| PrimOp::Foldl),
+    ))
+    .map(|v| Expr::Prim(v));
 
     let app = (expr(), many1::<Vec<_>, _, _>(expr())).map(|t| {
         let applicator = |fun, arg: Expr| Expr::App(Box::new(fun), Box::new(arg));
@@ -175,10 +180,12 @@ where
 }
 
 pub fn reserved() -> Vec<String> {
-    ["let", "lam", "fix", "true", "false", "if"]
-        .iter()
-        .map(|x| x.to_string())
-        .collect()
+    [
+        "let", "lam", "fix", "true", "false", "if", "null", "map", "foldl",
+    ]
+    .iter()
+    .map(|x| x.to_string())
+    .collect()
 }
 
 fn name<Input>() -> impl Parser<Input, Output = Name>
