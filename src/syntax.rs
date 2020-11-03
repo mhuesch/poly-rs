@@ -49,10 +49,11 @@ pub enum PrimOp {
     Cons,
 }
 
+#[derive(Clone, Debug)]
 pub struct Defn(pub Name, pub Expr);
 
-#[allow(dead_code)]
+#[derive(Clone, Debug)]
 pub struct Program {
-    p_defns: Vec<Defn>,
-    p_body: Expr,
+    pub p_defns: Vec<Defn>,
+    pub p_body: Expr,
 }

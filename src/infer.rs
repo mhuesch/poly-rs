@@ -246,12 +246,13 @@ fn infer(env: Env, is: &mut InferState, expr: &Expr) -> Result<(Type, Vec<Constr
     }
 }
 
-pub fn infer_top(mut env: Env, mut bindings: Vec<(Name, Expr)>) -> Result<Env, TypeError> {
-    while let Some((name, expr)) = bindings.pop() {
+pub fn infer_program(mut env: Env, mut prog: Program) -> Result<(Scheme, Env), TypeError> {
+    while let Some(Defn(name, expr)) = prog.p_defns.pop() {
         let sc = infer_expr(env.clone(), &expr)?;
         env.extend(name, sc);
     }
-    Ok(env)
+    let sc = infer_expr(env.clone(), &prog.p_body)?;
+    Ok((sc, env))
 }
 
 pub fn infer_expr(env: Env, expr: &Expr) -> Result<Scheme, TypeError> {

@@ -133,6 +133,26 @@ parser! {
     }
 }
 
+pub fn program_<Input>() -> impl Parser<Input, Output = Program>
+where
+    Input: Stream<Token = char>,
+    // Necessary due to rust-lang/rust#24159
+    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
+{
+    (many(attempt(defn())), expr()).map(|t| Program {
+        p_defns: t.0,
+        p_body: t.1,
+    })
+}
+
+parser! {
+    pub fn program[Input]()(Input) -> Program
+    where [Input: Stream<Token = char>]
+    {
+        program_()
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // helpers
 ////////////////////////////////////////////////////////////////////////////////

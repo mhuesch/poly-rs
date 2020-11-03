@@ -1,7 +1,7 @@
 use pretty::RcDoc;
 use std::iter;
 
-use super::syntax::{Defn, Expr, Expr::*, Lit, Lit::*, Name, PrimOp, PrimOp::*};
+use super::syntax::{Defn, Expr, Expr::*, Lit, Lit::*, Name, PrimOp, PrimOp::*, Program};
 use crate::sp;
 use crate::util::pretty::parens;
 
@@ -99,5 +99,16 @@ impl Defn {
                     .append(bd.ppr()),
             ),
         }
+    }
+}
+
+impl Program {
+    pub fn ppr(&self) -> RcDoc<()> {
+        let docs = self
+            .p_defns
+            .iter()
+            .map(|d| d.ppr())
+            .chain(iter::once(self.p_body.ppr()));
+        RcDoc::intersperse(docs, "\n\n")
     }
 }

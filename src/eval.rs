@@ -2,7 +2,7 @@ use pretty::RcDoc;
 use std::collections::HashMap;
 use std::iter;
 
-use super::syntax::{Expr, Lit, Name, PrimOp};
+use super::syntax::{Defn, Expr, Lit, Name, PrimOp, Program};
 use super::util::pretty::parens;
 use crate::{app, lam, sp};
 
@@ -52,6 +52,16 @@ impl EvalState {
         let s = format!("_{}", cnt);
         Name(s)
     }
+}
+
+pub fn eval_program(prog: Program) -> (Value, TermEnv) {
+    let mut env = HashMap::new();
+    let mut es = EvalState::new();
+    for Defn(nm, bd) in prog.p_defns {
+        let val = eval_(&env, &mut es, &bd);
+        env.insert(nm, val);
+    }
+    (eval_(&env, &mut es, &prog.p_body), env)
 }
 
 pub fn eval(expr: &Expr) -> Value {
