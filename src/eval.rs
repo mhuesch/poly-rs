@@ -54,12 +54,12 @@ impl EvalState {
     }
 }
 
-pub fn eval_program(prog: Program) -> (Value, TermEnv) {
+pub fn eval_program(prog: &Program) -> (Value, TermEnv) {
     let mut env = HashMap::new();
     let mut es = EvalState::new();
-    for Defn(nm, bd) in prog.p_defns {
-        let val = eval_(&env, &mut es, &bd);
-        env.insert(nm, val);
+    for Defn(nm, bd) in prog.p_defns.iter() {
+        let val = eval_(&env, &mut es, bd);
+        env.insert(nm.clone(), val);
     }
     (eval_(&env, &mut es, &prog.p_body), env)
 }

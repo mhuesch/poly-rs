@@ -22,11 +22,11 @@ fn main() -> std::io::Result<()> {
                 panic!("error: unconsumed input: {:?}", extra_input);
             } else {
                 // println!("{}", to_pretty(prog.ppr(), width));
-                match infer_program(Env::new(), prog.clone()) {
+                match infer_program(Env::new(), &prog) {
                     Ok((sc, env)) => {
                         println!("{:?}\n\n{:?}\n", sc, env);
                         let ty = to_pretty(sc.ppr(), width);
-                        let (res, _env) = eval_program(prog);
+                        let (res, _env) = eval_program(&prog);
                         let val = to_pretty(res.ppr(), width);
                         println!("(: {}\n   {}\n)", val, ty);
                         Ok(())

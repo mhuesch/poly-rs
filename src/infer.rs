@@ -246,10 +246,10 @@ fn infer(env: Env, is: &mut InferState, expr: &Expr) -> Result<(Type, Vec<Constr
     }
 }
 
-pub fn infer_program(mut env: Env, mut prog: Program) -> Result<(Scheme, Env), TypeError> {
-    while let Some(Defn(name, expr)) = prog.p_defns.pop() {
+pub fn infer_program(mut env: Env, prog: &Program) -> Result<(Scheme, Env), TypeError> {
+    for Defn(name, expr) in prog.p_defns.iter() {
         let sc = infer_expr(env.clone(), &expr)?;
-        env.extend(name, sc);
+        env.extend(name.clone(), sc);
     }
     let sc = infer_expr(env.clone(), &prog.p_body)?;
     Ok((sc, env))
