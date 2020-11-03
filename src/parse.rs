@@ -133,6 +133,14 @@ parser! {
     }
 }
 
+parser! {
+    pub fn defn_or_it_expr[Input]()(Input) -> Defn
+    where [Input: Stream<Token = char>]
+    {
+        choice(( attempt(defn()), expr().map(|e| Defn(Name("it".to_string()), e)) ))
+    }
+}
+
 pub fn program_<Input>() -> impl Parser<Input, Output = Program>
 where
     Input: Stream<Token = char>,
@@ -206,7 +214,7 @@ where
 pub fn reserved() -> Vec<String> {
     [
         "let", "lam", "fix", "true", "false", "if", "null", "map", "foldl", "pair", "fst", "snd",
-        "cons",
+        "cons", "defn", "list",
     ]
     .iter()
     .map(|x| x.to_string())

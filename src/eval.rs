@@ -35,10 +35,10 @@ impl Value {
     }
 }
 
-struct EvalState(u64);
+pub struct EvalState(u64);
 
 impl EvalState {
-    fn new() -> EvalState {
+    pub fn new() -> EvalState {
         EvalState(0)
     }
 
@@ -71,7 +71,7 @@ pub fn eval(expr: &Expr) -> Value {
 }
 
 use Value::*;
-fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
+pub fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
     match find_prim_app(&expr, false) {
         // in this case we directly interpret the PrimOp.
         Some((op, args)) => {

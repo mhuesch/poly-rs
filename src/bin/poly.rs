@@ -26,9 +26,9 @@ fn main() -> std::io::Result<()> {
                     Ok((sc, env)) => {
                         println!("{:?}\n\n{:?}\n", sc, env);
                         let ty = to_pretty(sc.ppr(), width);
-                        let (res, _env) = eval_program(&prog);
-                        let val = to_pretty(res.ppr(), width);
-                        println!("(: {}\n   {}\n)", val, ty);
+                        let (val, _env) = eval_program(&prog);
+                        let val_str = to_pretty(val.ppr(), width);
+                        println!("(: {}\n   {}\n)", val_str, ty);
                         Ok(())
                     }
                     Err(err) => panic!("type error: {:?}", err),
