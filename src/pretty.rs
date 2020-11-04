@@ -37,11 +37,6 @@ impl Expr {
                         .append(bd_),
                 )
             }
-            List(xs) => {
-                let xs_ = xs.into_iter().map(|x| x.ppr());
-                let docs = iter::once(RcDoc::text("list")).chain(xs_);
-                parens(RcDoc::intersperse(docs, sp!()))
-            }
             Lit(x) => x.ppr(),
             If(tst, thn, els) => {
                 let docs = vec![RcDoc::text("if"), tst.ppr(), thn.ppr(), els.ppr()];
@@ -77,6 +72,7 @@ impl PrimOp {
             Fst => RcDoc::text("fst"),
             Snd => RcDoc::text("snd"),
             Cons => RcDoc::text("cons"),
+            Nil => RcDoc::text("nil"),
         }
     }
 }

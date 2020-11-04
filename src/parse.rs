@@ -39,6 +39,7 @@ where
         res_str("fst").map(|_| PrimOp::Fst),
         res_str("snd").map(|_| PrimOp::Snd),
         res_str("cons").map(|_| PrimOp::Cons),
+        res_str("nil").map(|_| PrimOp::Nil),
     ))
     .map(|v| Expr::Prim(v));
 
@@ -74,7 +75,18 @@ where
             })
     };
 
-    let list = (res_str("list"), many::<Vec<_>, _, _>(expr())).map(|t| Expr::List(t.1));
+    // here we introduce a special syntactic form for lists, which we desugar
+    // into successive applications of `cons` to `nil`.
+    let list = (res_str("list"), many::<Vec<_>, _, _>(expr())).map(|t| {
+        let applicator = |ls, e| {
+            let cons = Expr::Prim(PrimOp::Cons);
+            let f = Expr::App(Box::new(cons.clone()), Box::new(e));
+            Expr::App(Box::new(f), Box::new(ls))
+        };
+        t.1.into_iter()
+            .rev()
+            .fold(Expr::Prim(PrimOp::Nil), applicator)
+    });
 
     let if_ = (res_str("if"), expr(), expr(), expr())
         .map(|t| Expr::If(Box::new(t.1), Box::new(t.2), Box::new(t.3)));
@@ -214,7 +226,7 @@ where
 pub fn reserved() -> Vec<String> {
     [
         "let", "lam", "fix", "true", "false", "if", "null", "map", "foldl", "pair", "fst", "snd",
-        "cons", "defn", "list",
+        "cons", "defn", "list", "nil",
     ]
     .iter()
     .map(|x| x.to_string())

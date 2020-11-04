@@ -156,6 +156,7 @@ pub fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
                     ),
                     _ => panic!("cons: bad types"),
                 },
+                PrimOp::Nil => panic!("nil: application of non-function"),
             }
         }
 
@@ -178,13 +179,16 @@ pub fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
                 eval_(&new_env, es, bd)
             }
 
-            Expr::List(xs) => Value::VList(xs.into_iter().map(|x| eval_(env, es, x)).collect()),
-
             Expr::If(tst, thn, els) => match eval_(env, es, tst) {
                 VBool(true) => eval_(env, es, thn),
                 VBool(false) => eval_(env, es, els),
                 _ => panic!("impossible: non-bool in test position of if"),
             },
+
+            // we treat `Nil` here differently from the other `PrimOp`s,
+            // interpreting it directly as a value (since it is not a function,
+            // like all the other `PrimOp`s.
+            Expr::Prim(PrimOp::Nil) => VList(Vec::new()),
 
             // this represents a PrimOp that is not in application position.
             // since it is then being used as an argument (or being bound), we

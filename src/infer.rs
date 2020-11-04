@@ -210,18 +210,6 @@ fn infer(
             csts_e.append(&mut csts_bd);
             Ok((t_bd, csts_e))
         }
-        Expr::List(xs) => {
-            let tv_elem = is.fresh();
-            let mut csts = Vec::new();
-            for x in xs {
-                let (t_x, mut csts_x) = infer(env, is, x)?;
-                csts.append(&mut csts_x);
-                csts.push(Constraint(t_x, tv_elem.clone()));
-            }
-            let tv_list = is.fresh();
-            csts.push(Constraint(tv_list.clone(), Type::TList(Box::new(tv_elem))));
-            Ok((tv_list, csts))
-        }
         Expr::Fix(bd) => {
             let (t_bd, mut csts_bd) = infer(env, is, bd)?;
             let tv = is.fresh();
@@ -489,6 +477,7 @@ fn infer_primop(is: &mut InferState, op: &PrimOp) -> Type {
             let ls = type_list(a.clone());
             type_arr_multi(vec![a, ls.clone()], ls.clone())
         }
+        PrimOp::Nil => type_list(is.fresh()),
     }
 }
 
