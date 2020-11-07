@@ -1,7 +1,7 @@
 use pretty::RcDoc;
-use std::{collections::HashMap, iter, cmp::Ordering};
+use std::{cmp::Ordering, collections::HashMap, iter};
 
-use super::syntax::{Defn, Expr, Lit, Name, PrimOp, Program, primop_arity};
+use super::syntax::{primop_arity, Defn, Expr, Lit, Name, PrimOp, Program};
 use super::util::pretty::parens;
 use crate::{app, lam, sp};
 
@@ -71,7 +71,7 @@ pub fn eval(expr: &Expr) -> Value {
 
 use Value::*;
 pub fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
-    match primop_apply_case(expr) {
+    match primop_apply_case(es, expr) {
         // in this case we directly interpret the PrimOp.
         PrimOpApplyCase::FullyApplied(op, args) => {
             let args_v: Vec<Value> = args
@@ -252,16 +252,39 @@ fn find_prim_app(expr: &Expr, in_app: bool) -> Option<(PrimOp, Vec<Expr>)> {
     }
 }
 
-fn primop_apply_case(expr: &Expr) -> PrimOpApplyCase {
+fn primop_apply_case(es: &mut EvalState, expr: &Expr) -> PrimOpApplyCase {
     match find_prim_app(expr, false) {
         None => PrimOpApplyCase::Other,
         Some((op, args)) => {
-            match primop_arity(&op).cmp(&args.len()) {
-                Ordering::Less => panic!("primop_apply_case: impossible: primop {:?} is over-applied", op),
+            let delta = primop_arity(&op) - args.len();
+            match delta.cmp(&0) {
+                Ordering::Less => panic!(
+                    "primop_apply_case: impossible: primop {:?} is over-applied",
+                    op
+                ),
+
                 // fully applied
                 Ordering::Equal => PrimOpApplyCase::FullyApplied(op, args),
+
                 // not fully applied
-                Ordering::Greater => todo!(),
+                Ordering::Greater => {
+                    // generate fresh names for the args which have not been applied
+                    let names: Vec<Name> = iter::repeat_with(|| es.fresh()).take(delta).collect();
+                    // wrap said fresh names into `Expr`s
+                    let name_vars = names.clone().into_iter().map(|nm| Expr::Var(nm));
+                    // iterator which runs through the provided arguments, adding the fresh names
+                    // onto the end to fill out to a full application
+                    let all_args = args.into_iter().chain(name_vars);
+                    // fold over the arguments to construct a full application of `op`
+                    let app_f = |f, arg| Expr::App(Box::new(f), Box::new(arg));
+                    let app = all_args.fold(Expr::Prim(op), app_f);
+                    // fold over the generated freshnames to construct a lambda which will bind the
+                    // names used in the applicaton
+                    let lam_f = |bd, nm| Expr::Lam(nm, Box::new(bd));
+                    let lam = names.into_iter().rev().fold(app, lam_f);
+                    // return the constructed `Expr`
+                    PrimOpApplyCase::PartiallyApplied(lam)
+                }
             }
         }
     }
