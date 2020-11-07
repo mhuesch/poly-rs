@@ -1,8 +1,7 @@
 use pretty::RcDoc;
-use std::collections::HashMap;
-use std::iter;
+use std::{collections::HashMap, iter, cmp::Ordering};
 
-use super::syntax::{Defn, Expr, Lit, Name, PrimOp, Program};
+use super::syntax::{Defn, Expr, Lit, Name, PrimOp, Program, primop_arity};
 use super::util::pretty::parens;
 use crate::{app, lam, sp};
 
@@ -72,9 +71,9 @@ pub fn eval(expr: &Expr) -> Value {
 
 use Value::*;
 pub fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
-    match find_prim_app(&expr, false) {
+    match primop_apply_case(expr) {
         // in this case we directly interpret the PrimOp.
-        Some((op, args)) => {
+        PrimOpApplyCase::FullyApplied(op, args) => {
             let args_v: Vec<Value> = args
                 .iter()
                 .map(|arg| eval_(env, es, &arg.clone()))
@@ -160,8 +159,10 @@ pub fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
             }
         }
 
+        PrimOpApplyCase::PartiallyApplied(lam) => eval_(env, es, &lam),
+
         // we do not find a direct PrimOp application, so we interpret normally.
-        None => match expr {
+        PrimOpApplyCase::Other => match expr {
             Expr::Lit(Lit::LInt(x)) => VInt(*x),
             Expr::Lit(Lit::LBool(x)) => VBool(*x),
 
@@ -226,6 +227,12 @@ pub fn eval_(env: &TermEnv, es: &mut EvalState, expr: &Expr) -> Value {
     }
 }
 
+enum PrimOpApplyCase {
+    FullyApplied(PrimOp, Vec<Expr>),
+    PartiallyApplied(Expr),
+    Other,
+}
+
 /// look for a "direct application" of a PrimOp. this means that it is nested
 /// within some number of `App`s, with no intervening other constructors. we
 /// want to find this because we can directly interpret these, rather than
@@ -242,5 +249,20 @@ fn find_prim_app(expr: &Expr, in_app: bool) -> Option<(PrimOp, Vec<Expr>)> {
         }
         Expr::Prim(op) if in_app => Some((op.clone(), Vec::new())),
         _ => None,
+    }
+}
+
+fn primop_apply_case(expr: &Expr) -> PrimOpApplyCase {
+    match find_prim_app(expr, false) {
+        None => PrimOpApplyCase::Other,
+        Some((op, args)) => {
+            match primop_arity(&op).cmp(&args.len()) {
+                Ordering::Less => panic!("primop_apply_case: impossible: primop {:?} is over-applied", op),
+                // fully applied
+                Ordering::Equal => PrimOpApplyCase::FullyApplied(op, args),
+                // not fully applied
+                Ordering::Greater => todo!(),
+            }
+        }
     }
 }

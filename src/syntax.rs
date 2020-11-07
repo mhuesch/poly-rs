@@ -60,7 +60,7 @@ pub struct Program {
 
 // helpers
 
-pub fn primop_arity(op: PrimOp) -> u8 {
+pub fn primop_arity(op: &PrimOp) -> usize {
     match op {
         PrimOp::Add => 2,
         PrimOp::Sub => 2,

@@ -165,6 +165,6 @@ pub mod syntax_test {
     fn primop_arity_eql(op: PrimOp) -> bool {
         let mut is = InferState::new();
         let ty = infer_primop(&mut is, &op);
-        primop_arity(op) == type_arity(ty)
+        primop_arity(&op) == type_arity(ty)
     }
 }
